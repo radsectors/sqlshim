@@ -19,12 +19,13 @@ implemented. Exercise caution and DO NOT use in a propduction environment.
 
 ## Motivation
 
-It was born out of the need for <http://php.net/manual/en/ref.sqlsrv.php>
+sqlshim was born out of the need for <http://php.net/manual/en/ref.sqlsrv.php>
 compatibility in local non-Windows development environments.
 
 
 ## Installation
-Most of the OS X instructions are theoretical as we have not fully tested them.
+Most of the OS X instructions are theoretical as they have not been fully
+tested.
 
 ### Install FreeTDS
 
@@ -43,7 +44,7 @@ On Debian or Ubuntu:
 On Mac OS X:
 ```brew install php5-pdo-dblib```
 
-### Instqll ODBC
+### Install ODBC
 
 On Debian or Ubuntu:
 ```apt-get install unixodbc```
@@ -56,7 +57,8 @@ On Mac OS X:
 
 1. Locate ```libtdsodbc.so``` and ```libtdsS.so```
 
-1. Copy the following text into your odbcinst.ini (usually ```/etc/odbcinst.ini``` on Debian/Ubuntu and ```/usr/local/etc/odbcinst.ini``` on Mac OS X) file.
+2. Copy the following into your odbcinst.ini (usually ```/etc/odbcinst.ini``` on
+Debian/Ubuntu and ```/usr/local/etc/odbcinst.ini``` on Mac OS X) file.
 
 ```ini
 [ODBC Drivers]
@@ -70,12 +72,15 @@ FileUsage = 1
 UsageCount = 1
 ```
 
-2. Then, set your ODBCINST environment variable to the location of your odbcinst.ini file.
+3. Then, set your ODBCINST environment variable to the location of your
+odbcinst.ini file.
 
 
 ## API Reference
 
-Depending on the size of the project, if it is small and simple enough the reference docs can be added to the README. For medium size to larger projects it is important to at least provide a link to where the API reference docs live.
+Depending on the size of the project, if it is small and simple enough the
+reference docs can be added to the README. For medium size to larger projects it
+ is important to at least provide a link to where the API reference docs live.
 
 ## Tests
 
@@ -83,7 +88,8 @@ Describe and show how to run the tests with code examples.
 
 ## Contributors
 
-Let people know how they can dive into the project, include important links to things like issue trackers, irc, twitter accounts if applicable.
+Let people know how they can dive into the project, include important links to
+things like issue trackers, irc, twitter accounts if applicable.
 
 ## License
 
