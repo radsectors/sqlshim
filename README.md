@@ -57,17 +57,17 @@ On Mac OS X:
 
 1. Copy the following text into your odbcinst.ini (usually </etc/odbcinst.ini> on Debian/Ubuntu and </usr/local/etc/odbcinst.ini> on Mac OS X) file.
 
-<
-[ODBC Drivers]
-FreeTDS = Installed
 
-[FreeTDS]
-Description = FreeTDS driver
-Driver = /path/to/libtdsodbc.so
-Setup = /path/to/libtdsS.so
-FileUsage = 1
-UsageCount = 1
->
+    [ODBC Drivers]
+    FreeTDS = Installed
+
+    [FreeTDS]>
+    Description = FreeTDS driver
+    Driver = /path/to/libtdsodbc.so
+    Setup = /path/to/libtdsS.so
+    FileUsage = 1
+    UsageCount = 1
+
 
 2. Then, set your ODBCINST environment variable to the location of your odbcinst.ini file.
 
