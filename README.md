@@ -19,8 +19,9 @@ implemented. Exercise caution and DO NOT use in a propduction environment.
 
 ## Motivation
 
-sqlshim was born out of the need for <http://php.net/manual/en/ref.sqlsrv.php>
-compatibility in local non-Windows development environments.
+sqlshim was born out of the need for
+[sqlsrv](http://php.net/manual/en/ref.sqlsrv.php) compatibility in local
+non-Windows development environments.
 
 
 ## Installation
@@ -55,7 +56,8 @@ On Mac OS X:
 
 ### Configure ODBC
 
-1. Locate ```libtdsodbc.so``` and ```libtdsS.so```
+1. Locate ```libtdsodbc.so``` and ```libtdsS.so```. Note: I think these have
+different names in the homebrew packages.
 
 2. Copy the following into your odbcinst.ini (usually ```/etc/odbcinst.ini``` on
 Debian/Ubuntu and ```/usr/local/etc/odbcinst.ini``` on Mac OS X) file.
@@ -78,18 +80,25 @@ odbcinst.ini file.
 
 ## API Reference
 
-Depending on the size of the project, if it is small and simple enough the
-reference docs can be added to the README. For medium size to larger projects it
- is important to at least provide a link to where the API reference docs live.
+[Microsoft SQL Server Driver for PHP](http://php.net/manual/en/book.sqlsrv.php)
+
+[SQLSRV Functions](http://php.net/manual/en/ref.sqlsrv.php)
+
 
 ## Tests
 
-Describe and show how to run the tests with code examples.
+1. rename ```config-sample.php``` to ```config.php``` and enter your database
+credentials.
+
+2. ```composer install```
+
+3. ```/vendor/bin/phpunit -c phpunit.xml```
+
 
 ## Contributors
 
-Let people know how they can dive into the project, include important links to
-things like issue trackers, irc, twitter accounts if applicable.
+You can hit me up on twitter [@radsectors](https://twitter.com/radsectors).
+
 
 ## License
 
