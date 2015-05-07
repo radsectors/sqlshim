@@ -19,55 +19,56 @@ implemented. Exercise caution and DO NOT use in a propduction environment.
 
 ## Motivation
 
-It was born out of the need for <http://php.net/manual/en/ref.sqlsrv.php> compatibility in local non-Windows development environments.
+It was born out of the need for <http://php.net/manual/en/ref.sqlsrv.php>
+compatibility in local non-Windows development environments.
 
 
 ## Installation
-All of the OS X instructions are theoretical as we have not fully tested them.
+Most of the OS X instructions are theoretical as we have not fully tested them.
 
 ### Install FreeTDS
 
 On Debian or Ubuntu:
-<apt-get install freetds-bin> or <freetds-common>
+```apt-get install freetds-bin``` or ```freetds-common```
 
 On Mac OS X, using homebrew
-<brew install freetds>
+```brew install freetds```
 
 
 ### Install PDO Driver
 
 On Debian or Ubuntu:
-<apt-get install php5-sybase>
+```apt-get install php5-sybase```
 
 On Mac OS X:
-<brew install php5-pdo-dblib>
+```brew install php5-pdo-dblib```
 
 ### Instqll ODBC
 
 On Debian or Ubuntu:
-<apt-get install unixodbc>
+```apt-get install unixodbc```
 
 On Mac OS X:
-<brew install unixodbc>
+```brew install unixodbc```
 
 
 ### Configure ODBC
 
-1. Locate <libtdsodbc.so> and <libtdsS.so>
+1. Locate ```libtdsodbc.so``` and ```libtdsS.so```
 
-1. Copy the following text into your odbcinst.ini (usually </etc/odbcinst.ini> on Debian/Ubuntu and </usr/local/etc/odbcinst.ini> on Mac OS X) file.
+1. Copy the following text into your odbcinst.ini (usually ```/etc/odbcinst.ini``` on Debian/Ubuntu and ```/usr/local/etc/odbcinst.ini``` on Mac OS X) file.
 
+```ini
+[ODBC Drivers]
+FreeTDS = Installed
 
-    [ODBC Drivers]
-    FreeTDS = Installed
-
-    [FreeTDS]>
-    Description = FreeTDS driver
-    Driver = /path/to/libtdsodbc.so
-    Setup = /path/to/libtdsS.so
-    FileUsage = 1
-    UsageCount = 1
-
+[FreeTDS]
+Description = FreeTDS driver
+Driver = /path/to/libtdsodbc.so
+Setup = /path/to/libtdsS.so
+FileUsage = 1
+UsageCount = 1
+```
 
 2. Then, set your ODBCINST environment variable to the location of your odbcinst.ini file.
 
