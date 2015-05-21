@@ -11,11 +11,13 @@ class SqlShim
 
   const SQLSRV_INT_MAX = 2147483648;
 
-  public static function init( $opts )
+  public static function init( $opts=[] )
   {
     if ( self::$_init ) return;
 
-    $options = [
+    require 'register_globals.php';
+
+    self::$options = [
       'driver' => "FreeTDS",
       'tds_version' => "7.2",
     ];
@@ -31,8 +33,6 @@ class SqlShim
           break;
       }
     }
-
-    require 'register_globals.php';
 
     self::$sqlsrv_error_table = [];
     self::$sqlsrv_fetch_table = [
@@ -56,21 +56,24 @@ class SqlShim
   /**
    * sqlsrv_begin_transaction
    */
-  public static function begin_transaction( $conn ) {
-
+  public static function begin_transaction( $conn )
+  {
+    return $conn->beginTransaction();
   }
 
   /**
    * sqlsrv_cancel
    */
-  public static function cancel( $stmt ) {
+  public static function cancel( $stmt )
+  {
 
   }
 
   /**
    * sqlsrv_client_info
    */
-  public static function client_info( $conn ) {
+  public static function client_info( $conn )
+  {
 
   }
 
@@ -94,7 +97,8 @@ class SqlShim
   /**
    * sqlsrv_configure
    */
-  public static function configure( $setting, $value ) {
+  public static function configure( $setting, $value )
+  {
 
   }
 
@@ -120,7 +124,8 @@ class SqlShim
       $return->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
       // $return->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
     }
-    catch ( \PDOException $e ) {
+    catch ( \PDOException $e )
+    {
       self::err($return);
     }
     return $return;
@@ -137,8 +142,9 @@ class SqlShim
   /**
    * sqlsrv_execute
    */
-  public static function execute( $stmt ) {
-
+  public static function execute( $stmt )
+  {
+    return $stmt->execute();
   }
 
   /**
@@ -152,11 +158,13 @@ class SqlShim
         self::$sqlsrv_scroll_table[$row],
         $offset
       );
-      if ( is_array($return) ) {
+      if ( is_array($return) )
+      {
         $return = self::typify($return);
       }
     }
-    catch ( PDOException $e ) {
+    catch ( \PDOException $e )
+    {
       self::err($stmt);
       $return = false;
     }
@@ -167,7 +175,7 @@ class SqlShim
   /**
    * sqlsrv_fetch_object
    */
-  public static function fetch_object( $stmt, $className='stdClass', $ctorParams, $row, $offset )
+  public static function fetch_object( $stmt, $className, $ctorParams, $row, $offset )
   {
     try {
       $return = $stmt->fetch(
@@ -176,11 +184,12 @@ class SqlShim
         $offset
       );
     }
-    catch ( Exception $e ) { //
+    catch ( Exception $e )
+    { //
       try
       {
         $return = $stmt->fetch(
-          \PDO::FETCH_ASSOC,
+          \PDO::FETCH_ASSOC | self::$sqlsrv_fetch_table[$fetchType],
           self::$sqlsrv_scroll_table[$row],
           $offset
         );
@@ -189,7 +198,8 @@ class SqlShim
           $return = (object)$return;
         }
       }
-      catch ( Exception $e ) {
+      catch ( Exception $e )
+      {
         self::err($stmt);
         $return = false;
       }
@@ -206,14 +216,16 @@ class SqlShim
   /**
    * sqlsrv_fetch
    */
-  public static function fetch( $stmt, $row, $offset ) {
-
+  public static function fetch( $stmt, $row, $offset )
+  {
+    return $stmt->fetch(\PDO::FETCH_NUM, self::$sqlsrv_scroll_table[$row], $offset);
   }
 
   /**
    * sqlsrv_field_metadata
    */
-  public static function field_metadata( $stmt, $row, $offset ) {
+  public static function field_metadata( $stmt, $row, $offset )
+  {
 
   }
 
@@ -229,14 +241,16 @@ class SqlShim
   /**
    * sqlsrv_get_config
    */
-  public static function get_config( $setting ) {
+  public static function get_config( $setting )
+  {
 
   }
 
   /**
    * sqlsrv_get_field
    */
-  public static function get_field( $stmt, $fieldIndex, $getAsType ) {
+  public static function get_field( $stmt, $fieldIndex, $getAsType )
+  {
     // @TODO: figure out what to do with $getAsType...
     return $stmt->fetchColumn($fieldIndex);
   }
@@ -244,28 +258,32 @@ class SqlShim
   /**
    * sqlsrv_has_rows
    */
-  public static function has_rows( $stmt ) {
+  public static function has_rows( $stmt )
+  {
 
   }
 
   /**
    * sqlsrv_next_result
    */
-  public static function next_result( $stmt ) {
+  public static function next_result( $stmt )
+  {
 
   }
 
   /**
    * sqlsrv_num_fields
    */
-  public static function num_fields( $stmt ) {
+  public static function num_fields( $stmt )
+  {
 
   }
 
   /**
    * sqlsrv_num_rows
    */
-  public static function num_rows( $stmt ) {
+  public static function num_rows( $stmt )
+  {
     // @TODO: OR just get the count before, set it somewhere static and grab...
     // @TODO: test this.
     $row = $stmt->fetch(PDO::FETCH_NUM);
@@ -292,7 +310,8 @@ class SqlShim
     try {
       $stmt = $conn->prepare($sql);
       $i = 1;
-      foreach ( array_slice($params, 0, $count) as $var ) {
+      foreach ( array_slice($params, 0, $count) as $var )
+      {
         if ( $i>$count ) break;
         $stmt->bindValue(":var$i", $var);
         $i++;
@@ -300,7 +319,8 @@ class SqlShim
 
       return $stmt;
     }
-    catch ( Exception $e ) {
+    catch ( Exception $e )
+    {
       self::err($stmt);
     }
   }
@@ -319,7 +339,8 @@ class SqlShim
         self::err($stmt);
       }
     }
-    catch ( Exception $e ) {
+    catch ( Exception $e )
+    {
       self::err($stmt);
     }
     return false;
@@ -379,7 +400,8 @@ class SqlShim
   private static function typify( $row )
   {
     $i = 0;
-    foreach ( $row as $col=>&$val ) {
+    foreach ( $row as $col=>&$val )
+    {
       $val = self::guesstype($val);
       $i++;
     }
