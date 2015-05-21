@@ -1,18 +1,19 @@
 # sqlshim
-Provides replacement sqlsrv driver functions for Linux/OS X.
+Provides replacement sqlsrv driver functions in PHP for Linux/OS X.
 
 
 ## Synopsis
 
-This shim does NOT (yet?) replace or duplicate ALL sqlsrv driver functionality.
-All of the functions are there, but only the most common have been fully(?)
-implemented. Exercise caution and DO NOT use in a propduction environment.
+This shim does NOT (yet?) replace or duplicate ALL PHP sqlsrv driver
+functionality. All of the functions are there, but only the most common have
+been fully(?) implemented. Exercise caution and DO NOT use in a production
+environment.
 
 
 ## Code Example
 
-1. Instantiate object...
-2. sqlsrv_connect();
+1. \RadSectors\SqlShim\SqlShim::init();
+2. sqlsrv_connect( ... );
 3. ???
 4. Profit!!
 
@@ -20,7 +21,7 @@ implemented. Exercise caution and DO NOT use in a propduction environment.
 ## Motivation
 
 sqlshim was born out of the need for
-[sqlsrv](http://php.net/manual/en/ref.sqlsrv.php) compatibility in local
+[sqlsrv](http://php.net/manual/en/book.sqlsrv.php) compatibility in local
 non-Windows development environments.
 
 
@@ -59,8 +60,8 @@ On Mac OS X:
 1. Locate ```libtdsodbc.so``` and ```libtdsS.so```. Note: I think these have
 different names in the homebrew packages.
 
-2. Copy the following into your odbcinst.ini (usually ```/etc/odbcinst.ini``` on
-Debian/Ubuntu and ```/usr/local/etc/odbcinst.ini``` on Mac OS X) file.
+2. Copy the following into your odbcinst.ini (usually ```/etc/odbcinst.ini```
+on Debian/Ubuntu and ```/usr/local/etc/odbcinst.ini``` on Mac OS X) file.
 
 ```ini
 [ODBC Drivers]
@@ -84,15 +85,24 @@ odbcinst.ini file.
 
 [SQLSRV Functions](http://php.net/manual/en/ref.sqlsrv.php)
 
+### Other reading
+
+http://www.freetds.org/userguide/
+
+http://lists.ibiblio.org/pipermail/freetds/2011q4/027555.html
+
+http://dunglas.fr/2014/01/connection-to-a-ms-sql-server-from-symfony-doctrine-on-mac-or-linux/
+
+http://www.acloudtree.com/how-to-install-freetds-and-unixodbc-on-osx-using-homebrew-for-use-with-ruby-php-and-perl/
+
+http://forum.lazarus.freepascal.org/index.php?topic=24352.0
+
 
 ## Tests
 
-1. rename ```config-sample.php``` to ```config.php``` and enter your database
-credentials.
+Rename ```config-sample.php``` to ```config.php```.
 
-2. ```composer install```
-
-3. ```/vendor/bin/phpunit -c phpunit.xml```
+```vendor/bin/phpunit -c phpunit.xml```
 
 
 ## Contributors
