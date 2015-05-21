@@ -36,21 +36,65 @@ namespace { // global namespace
     define('SQLSRV_PHPTYPE_INT', 2);
     define('SQLSRV_PHPTYPE_DATETIME', 5);
     define('SQLSRV_PHPTYPE_FLOAT', 3);
-    // define('SQLSRV_PHPTYPE_STREAM', 0);
-    // define('SQLSRV_PHPTYPE_STRING', 0);
+    function SQLSRV_PHPTYPE_STREAM( $encoding ) {
+      switch ( strval($encoding) )
+      {
+        case 'binary':
+          $return = 518;
+          break;
+        case 'char':
+          $return = 774;
+          break;
+        default:
+          $return = 6;
+          break;
+      }
+      return $return;
+    }
+    function SQLSRV_PHPTYPE_STRING( $encoding ) {
+      switch ( strval($encoding) )
+      {
+        case 'binary':
+          $return = 33554948;
+          break;
+        case 'char':
+          $return = 33555204;
+          break;
+        default:
+          $return = 33554436;
+          break;
+      }
+      return $return;
+    }
 
     define('SQLSRV_ENC_BINARY', 'binary');
     define('SQLSRV_ENC_CHAR', 'char');
 
     define('SQLSRV_SQLTYPE_BIGINT', -5);
-    // define('SQLSRV_SQLTYPE_BINARY', 0);
+    function SQLSRV_SQLTYPE_BINARY( $byteCount ) {
+      $bc = intval($byteCount);
+      switch ( true )
+      {
+        case $bc>0 && $bc<8001:
+          $return = ($bc*512)+SqlShim::MAGIC_NUM_BINARY;
+          break;
+        case $bc===0:
+        default:
+          $return = 2147483134;
+      }
+      return $return;
+    }
     define('SQLSRV_SQLTYPE_BIT', -7);
     // define('SQLSRV_SQLTYPE_CHAR', 0);
     define('SQLSRV_SQLTYPE_DATE', 5211);
     define('SQLSRV_SQLTYPE_DATETIME', 25177693);
     define('SQLSRV_SQLTYPE_DATETIME2', 58734173);
     define('SQLSRV_SQLTYPE_DATETIMEOFFSET', 58738021);
-    // define('SQLSRV_SQLTYPE_DECIMAL', 0);
+    function SQLSRV_SQLTYPE_DECIMAL( $precision, $scale ) {
+      // @TODO: figure out how to calculate return value;
+      $return = 0;
+      return $return;
+    }
     define('SQLSRV_SQLTYPE_FLOAT', 6);
     define('SQLSRV_SQLTYPE_IMAGE', -4);
     define('SQLSRV_SQLTYPE_INT', 4);
@@ -225,7 +269,5 @@ namespace { // global namespace
     {
       return SqlShim::server_info($conn);
     }
-
   }
-
 }

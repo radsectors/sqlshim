@@ -3,13 +3,15 @@ namespace RadSectors\Microshaft;
 
 class SqlShim
 {
-  private static $sqlsrv_error_table;
-  private static $sqlsrv_fetch_table;
-  private static $sqlsrv_scroll_table;
+  private static $error_table;
+  private static $fetch_table;
+  private static $scroll_table;
   private static $options = [];
   private static $_init = false;
 
   const SQLSRV_INT_MAX = 2147483648;
+
+  const MAGIC_NUM_BINARY = 2139095550;
 
   public static function init( $opts=[] )
   {
@@ -34,13 +36,13 @@ class SqlShim
       }
     }
 
-    self::$sqlsrv_error_table = [];
-    self::$sqlsrv_fetch_table = [
+    self::$error_table = [];
+    self::$fetch_table = [
       SQLSRV_FETCH_NUMERIC => \PDO::FETCH_NUM,
       SQLSRV_FETCH_ASSOC => \PDO::FETCH_ASSOC,
       SQLSRV_FETCH_BOTH => \PDO::FETCH_BOTH,
     ];
-    self::$sqlsrv_scroll_table = [
+    self::$scroll_table = [
       SQLSRV_SCROLL_NEXT => \PDO::FETCH_ORI_NEXT,
       SQLSRV_SCROLL_FIRST => \PDO::FETCH_ORI_FIRST,
       SQLSRV_SCROLL_LAST => \PDO::FETCH_ORI_LAST,
@@ -113,20 +115,31 @@ class SqlShim
     // default port
     list($serverName,$port) = explode(',', $serverName . ",1433", 2);
 
-    $driver = "odbc:Driver=" . self::$options['driver'] . ";" .
+    $driver = "odbc:" .
+      "Driver=" . self::$options['driver'] . ";" .
       "TDS_Version=" . self::$options['tds_version'] . ";";
-    $creds = "Server=$serverName;Port=$port;Database=$connectionInfo[Database];";
-    $options = "Charset=$connectionInfo[CharacterSet];";
+    $creds =
+      "Server=$serverName;" .
+      "Port=$port;" .
+      "Database=$connectionInfo[Database];";
+    $options =
+      "Charset=$connectionInfo[CharacterSet];";
 
     try {
-      $return = new \PDO($driver.$creds.$options, $connectionInfo['UID'], $connectionInfo['PWD']);
+      $return = new \PDO(
+        $driver.$creds.$options,
+        $connectionInfo['UID'],
+        $connectionInfo['PWD']
+      );
+
       $return->setAttribute(\PDO::ATTR_EMULATE_PREPARES, true);
       $return->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
       // $return->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
     }
     catch ( \PDOException $e )
     {
-      self::err($return);
+      self::err($e->errorInfo);
+      return false;
     }
     return $return;
   }
@@ -136,7 +149,7 @@ class SqlShim
    */
   public static function errors( $errorsOrWarnings )
   {
-    return self::$sqlsrv_error_table;
+    return self::$error_table;
   }
 
   /**
@@ -154,8 +167,8 @@ class SqlShim
   {
     try {
       $return = $stmt->fetch(
-        \PDO::FETCH_ASSOC | self::$sqlsrv_fetch_table[$fetchType],
-        self::$sqlsrv_scroll_table[$row],
+        \PDO::FETCH_ASSOC | self::$fetch_table[$fetchType],
+        self::$scroll_table[$row],
         $offset
       );
       if ( is_array($return) )
@@ -180,7 +193,7 @@ class SqlShim
     try {
       $return = $stmt->fetch(
         \PDO::FETCH_OBJ,
-        self::$sqlsrv_scroll_table[$row],
+        self::$scroll_table[$row],
         $offset
       );
     }
@@ -189,8 +202,8 @@ class SqlShim
       try
       {
         $return = $stmt->fetch(
-          \PDO::FETCH_ASSOC | self::$sqlsrv_fetch_table[$fetchType],
-          self::$sqlsrv_scroll_table[$row],
+          \PDO::FETCH_ASSOC | self::$fetch_table[$fetchType],
+          self::$scroll_table[$row],
           $offset
         );
         if ( is_array($return) )
@@ -218,7 +231,7 @@ class SqlShim
    */
   public static function fetch( $stmt, $row, $offset )
   {
-    return $stmt->fetch(\PDO::FETCH_NUM, self::$sqlsrv_scroll_table[$row], $offset);
+    return $stmt->fetch(\PDO::FETCH_NUM, self::$scroll_table[$row], $offset);
   }
 
   /**
@@ -384,13 +397,12 @@ class SqlShim
    * Helper functions
    */
 
-  private static function err( $obj )
+  private static function err( $errnfo )
   {
-    $err = $obj->errorInfo();
-    self::$sqlsrv_error_table[] = [
-      'SQLSTATE' => $err[0],
-      'code' => $err[1],
-      'message' => $err[2],
+    self::$error_table[] = [
+      'SQLSTATE' => $errnfo[0],
+      'code' => $errnfo[1],
+      'message' => $errnfo[2],
     ];
   }
 
