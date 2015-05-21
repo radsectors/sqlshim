@@ -4,16 +4,14 @@ Provides replacement sqlsrv driver functions in PHP for Linux/OS X.
 
 ## Synopsis
 
-This shim does NOT (yet?) replace or duplicate ALL PHP sqlsrv driver
-functionality. All of the functions are there, but only the most common have
-been fully(?) implemented. Exercise caution and DO NOT use in a production
-environment.
+sqlshim does not **yet** fully replace or duplicate ALL sqlsrv driver functionality. All of the functions have been defined, but only the most commonly used (in my own professional experiences) have been fleshed out.
+Please remember that this software is in alpha stages and far from production-ready. It is provided as-is and without warranty. I am not responsible for any damages incurred from its use.
 
 
 ## Code Example
 
-1. \RadSectors\SqlShim\SqlShim::init();
-2. sqlsrv_connect( ... );
+1. ```\RadSectors\Microshaft\SqlShim::init();```
+2. ```sqlsrv_connect( ... );```
 3. ???
 4. Profit!!
 
@@ -21,13 +19,11 @@ environment.
 ## Motivation
 
 sqlshim was born out of the need for
-[sqlsrv](http://php.net/manual/en/book.sqlsrv.php) compatibility in local
-non-Windows development environments.
+[sqlsrv](http://php.net/manual/en/book.sqlsrv.php) compatibility in local non-Windows development environments.
 
 
 ## Installation
-Most of the OS X instructions are theoretical as they have not been fully
-tested.
+Note: most of the OS X instructions are theoretical as they have not been fully tested.
 
 ### Install FreeTDS
 
@@ -57,11 +53,9 @@ On Mac OS X:
 
 ### Configure ODBC
 
-1. Locate ```libtdsodbc.so``` and ```libtdsS.so```. Note: I think these have
-different names in the homebrew packages.
+1. Locate ```libtdsodbc.so``` and ```libtdsS.so```. Note: I think these have different names in the homebrew packages.
 
-2. Copy the following into your odbcinst.ini (usually ```/etc/odbcinst.ini```
-on Debian/Ubuntu and ```/usr/local/etc/odbcinst.ini``` on Mac OS X) file.
+2. Copy the following into your odbcinst.ini (usually ```/etc/odbcinst.ini``` on Debian/Ubuntu and ```/usr/local/etc/odbcinst.ini``` on Mac OS X) file.
 
 ```ini
 [ODBC Drivers]
@@ -75,8 +69,7 @@ FileUsage = 1
 UsageCount = 1
 ```
 
-3. Then, set your ODBCINST environment variable to the location of your
-odbcinst.ini file.
+3. Then, set your ODBCINST environment variable to the location of your odbcinst.ini file.
 
 
 ## API Reference
@@ -94,6 +87,8 @@ http://lists.ibiblio.org/pipermail/freetds/2011q4/027555.html
 http://dunglas.fr/2014/01/connection-to-a-ms-sql-server-from-symfony-doctrine-on-mac-or-linux/
 
 http://www.acloudtree.com/how-to-install-freetds-and-unixodbc-on-osx-using-homebrew-for-use-with-ruby-php-and-perl/
+
+https://msdn.microsoft.com/en-us/library/ff628167.aspx
 
 http://forum.lazarus.freepascal.org/index.php?topic=24352.0
 
