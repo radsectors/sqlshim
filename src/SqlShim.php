@@ -1,16 +1,37 @@
 <?php
-namespace RadSectors\SqlShim;
+namespace RadSectors\Microshaft;
 
 class SqlShim
 {
   private static $sqlsrv_error_table;
   private static $sqlsrv_fetch_table;
   private static $sqlsrv_scroll_table;
+  private static $options = [];
   private static $_init = false;
 
-  public static function init()
+  const SQLSRV_INT_MAX = 2147483648;
+
+  public static function init( $opts )
   {
     if ( self::$_init ) return;
+
+    $options = [
+      'driver' => "FreeTDS",
+      'tds_version' => "7.2",
+    ];
+    foreach ( $opts as $opt=>$val )
+    {
+      $opt = strtolower($opt);
+      switch ( $opt )
+      {
+        case 'driver':
+          self::$options[$opt] = $val;
+          break;
+        default:
+          break;
+      }
+    }
+
     require 'register_globals.php';
 
     self::$sqlsrv_error_table = [];
@@ -80,23 +101,26 @@ class SqlShim
   /**
    * sqlsrv_connect
    */
-  public static function connect( $dbhost, $cnfo )
+  public static function connect( $serverName, $connectionInfo )
   {
-    self::init();
+    // @TODO: research other prefixes? do something with them?
+    $serverName = str_replace('tcp:','',$serverName);
 
-    $dbhost = str_replace('tcp:','',$dbhost);
-    list($dbhost,$port) = explode(',',$dbhost,2);
+    // default port
+    list($serverName,$port) = explode(',', $serverName . ",1433", 2);
 
-    // http://lists.ibiblio.org/pipermail/freetds/2011q4/027555.html
-    // http://www.freetds.org/userguide/choosingtdsprotocol.htm
-    $constr = "odbc:Driver=FreeTDS;TDS_Version=7.2;Server=$dbhost;Port=$port;Database=$cnfo[Database];Charset=$cnfo[CharacterSet];";
+    $driver = "odbc:Driver=" . self::$options['driver'] . ";" .
+      "TDS_Version=" . self::$options['tds_version'] . ";";
+    $creds = "Server=$serverName;Port=$port;Database=$connectionInfo[Database];";
+    $options = "Charset=$connectionInfo[CharacterSet];";
 
     try {
-      $return = new \PDO($constr, $cnfo['UID'], $cnfo['PWD']);
+      $return = new \PDO($driver.$creds.$options, $connectionInfo['UID'], $connectionInfo['PWD']);
       $return->setAttribute(\PDO::ATTR_EMULATE_PREPARES, true);
+      $return->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
       // $return->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
     }
-    catch ( ErrorException $e ) {
+    catch ( \PDOException $e ) {
       self::err($return);
     }
     return $return;
@@ -124,15 +148,15 @@ class SqlShim
   {
     try {
       $return = $stmt->fetch(
-        \PDO::FETCH_ASSOC | self::$sqlsrv_fetch_table[$fetchType]
-        ,self::$sqlsrv_scroll_table[$row]
-        ,$offset
+        \PDO::FETCH_ASSOC | self::$sqlsrv_fetch_table[$fetchType],
+        self::$sqlsrv_scroll_table[$row],
+        $offset
       );
       if ( is_array($return) ) {
         $return = self::typify($return);
       }
     }
-    catch ( ErrorException $e ) {
+    catch ( PDOException $e ) {
       self::err($stmt);
       $return = false;
     }
@@ -143,21 +167,37 @@ class SqlShim
   /**
    * sqlsrv_fetch_object
    */
-  public static function fetch_object( $stmt, $className, $ctorParams, $row, $offset )
+  public static function fetch_object( $stmt, $className='stdClass', $ctorParams, $row, $offset )
   {
     try {
       $return = $stmt->fetch(
-        \PDO::FETCH_OBJ
-        ,self::$sqlsrv_scroll_table[$row]
-        ,$offset
+        \PDO::FETCH_OBJ,
+        self::$sqlsrv_scroll_table[$row],
+        $offset
       );
-      if ( is_object($return) ) {
-        $return = self::typify($return);
+    }
+    catch ( Exception $e ) { //
+      try
+      {
+        $return = $stmt->fetch(
+          \PDO::FETCH_ASSOC,
+          self::$sqlsrv_scroll_table[$row],
+          $offset
+        );
+        if ( is_array($return) )
+        {
+          $return = (object)$return;
+        }
+      }
+      catch ( Exception $e ) {
+        self::err($stmt);
+        $return = false;
       }
     }
-    catch ( ErrorException $e ) {
-      self::err($stmt);
-      $return = false;
+
+    if ( is_object($return) )
+    {
+      $return = self::typify($return);
     }
 
     return $return;
@@ -254,13 +294,13 @@ class SqlShim
       $i = 1;
       foreach ( array_slice($params, 0, $count) as $var ) {
         if ( $i>$count ) break;
-        $stmt->bindParam(":var$i", $var);
+        $stmt->bindValue(":var$i", $var);
         $i++;
       }
 
       return $stmt;
     }
-    catch ( ErrorException $e ) {
+    catch ( Exception $e ) {
       self::err($stmt);
     }
   }
@@ -279,7 +319,7 @@ class SqlShim
         self::err($stmt);
       }
     }
-    catch ( ErrorException $e ) {
+    catch ( Exception $e ) {
       self::err($stmt);
     }
     return false;
