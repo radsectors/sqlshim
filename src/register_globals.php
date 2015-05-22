@@ -73,19 +73,21 @@ namespace { // global namespace
     define('SQLSRV_SQLTYPE_BIGINT', -5);
     function SQLSRV_SQLTYPE_BINARY( $byteCount ) {
       $bc = intval($byteCount);
-      switch ( true )
+      if ( $bc>0 && $bc<8001 )
       {
-        case $bc>0 && $bc<8001:
-          $return = ($bc*512)+SqlShim::MAGIC_NUM_BINARY;
-          break;
-        case $bc===0:
-        default:
-          $return = 2147483134;
+        return ($bc*512)+SqlShim::MAGIC_NUM_BINARY;
       }
-      return $return;
+      return SqlShim::MAGIC_NUM_BINARY-8387584;
     }
     define('SQLSRV_SQLTYPE_BIT', -7);
-    // define('SQLSRV_SQLTYPE_CHAR', 0);
+    function SQLSRV_SQLTYPE_CHAR( $charCount ) {
+      $cc = intval($charCount);
+      if ( $cc>0 && $cc<8001 )
+      {
+        return ($cc*512)+SqlShim::MAGIC_NUM_CHAR;
+      }
+      return SqlShim::MAGIC_NUM_CHAR-8387584;
+    }
     define('SQLSRV_SQLTYPE_DATE', 5211);
     define('SQLSRV_SQLTYPE_DATETIME', 25177693);
     define('SQLSRV_SQLTYPE_DATETIME2', 58734173);
@@ -99,10 +101,27 @@ namespace { // global namespace
     define('SQLSRV_SQLTYPE_IMAGE', -4);
     define('SQLSRV_SQLTYPE_INT', 4);
     define('SQLSRV_SQLTYPE_MONEY', 33564163);
-    // define('SQLSRV_SQLTYPE_NCHAR', 0);
-    // define('SQLSRV_SQLTYPE_NUMERIC', 0);
-    // define('SQLSRV_SQLTYPE_NVARCHAR', 0);
-    // define('SQLSRV_SQLTYPE_NVARCHAR(\'max\')', 0);
+    function SQLSRV_SQLTYPE_NCHAR( $charCount ) {
+      $cc = intval($charCount);
+      if ( $cc>0 && $cc<4001 )
+      {
+        return ($cc*512)+SqlShim::MAGIC_NUM_NCHAR;
+      }
+      return SqlShim::MAGIC_NUM_NCHAR-8387584;
+    }
+    function SQLSRV_SQLTYPE_NUMERIC( $precision, $scale ) {
+      // @TODO: figure out how to calculate return value;
+      $return = 0;
+      return $return;
+    }
+    function SQLSRV_SQLTYPE_NVARCHAR( $charCount ) {
+      $cc = intval($charCount);
+      if ( $cc>0 && $cc<4001 )
+      {
+        return ($cc*512)+SqlShim::MAGIC_NUM_NVARCHAR;
+      }
+      return SqlShim::MAGIC_NUM_NVARCHAR-8387584;
+    }
     define('SQLSRV_SQLTYPE_NTEXT', -10);
     define('SQLSRV_SQLTYPE_REAL', 7);
     define('SQLSRV_SQLTYPE_SMALLDATETIME', 8285);
@@ -114,9 +133,22 @@ namespace { // global namespace
     define('SQLSRV_SQLTYPE_TINYINT', -6);
     define('SQLSRV_SQLTYPE_UNIQUEIDENTIFIER', -11);
     define('SQLSRV_SQLTYPE_UDT', -151);
-    // define('SQLSRV_SQLTYPE_VARBINIARY', 0);
-    // define('SQLSRV_SQLTYPE_VARBINARY(\'max\')', 0);
-    // define('SQLSRV_SQLTYPE_VARCHAR', 0);
+    function SQLSRV_SQLTYPE_VARBINARY( $byteCount ) {
+      $bc = intval($byteCount);
+      if ( $bc>0 && $bc<8001 )
+      {
+        return ($bc*512)+SqlShim::MAGIC_NUM_VARBINARY;
+      }
+      return SqlShim::MAGIC_NUM_VARBINARY-8387584+16775168;
+    }
+    function SQLSRV_SQLTYPE_VARCHAR( $charCount ) {
+      $cc = intval($charCount);
+      if ( $cc>0 && $cc<8001 )
+      {
+        return ($cc*512)+SqlShim::MAGIC_NUM_VARCHAR;
+      }
+      return SqlShim::MAGIC_NUM_VARCHAR-8387584;
+    }
     define('SQLSRV_SQLTYPE_XML', -152);
 
     define('SQLSRV_TXN_READ_UNCOMMITTED', 1);
