@@ -12,6 +12,11 @@ class SqlShim
   const SQLSRV_INT_MAX = 2147483648;
 
   const MAGIC_NUM_BINARY = 2139095550;
+  const MAGIC_NUM_CHAR = 2139095041;
+  const MAGIC_NUM_NCHAR = 2139095544;
+  const MAGIC_NUM_NVARCHAR = 2139095543;
+  const MAGIC_NUM_VARBINARY = 2139095549;
+  const MAGIC_NUM_VARCHAR = 2139095052;
 
   public static function init( $opts=[] )
   {
