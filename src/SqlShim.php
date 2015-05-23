@@ -9,8 +9,9 @@ class SqlShim
   private static $options = [];
   private static $_init = false;
 
-  const SQLSRV_INT_MAX = 2147483648;
+  const SQL_INT_MAX = 2147483648;
 
+  const MAGIC_NUM_STRING = 8389636;
   const MAGIC_NUM_BINARY = 2139095550;
   const MAGIC_NUM_CHAR = 2139095041;
   const MAGIC_NUM_NCHAR = 2139095544;
@@ -18,6 +19,232 @@ class SqlShim
   const MAGIC_NUM_VARBINARY = 2139095549;
   const MAGIC_NUM_VARCHAR = 2139095052;
 
+  const MAGIC_NUM_ZERO = 8387584;
+
+
+
+  /**
+   * Helper functions
+   */
+  private static function err( $errnfo )
+  {
+    self::$error_table[] = [
+      'SQLSTATE' => $errnfo[0],
+      'code' => $errnfo[1],
+      'message' => $errnfo[2],
+    ];
+  }
+
+  /**
+   * sqlsrv_typify
+   */
+  private static function typify( $row )
+  {
+    $i = 0;
+    foreach ( $row as $col=>&$val )
+    {
+      $val = self::guesstype($val);
+      $i++;
+    }
+    return $row;
+  }
+
+  /**
+   * guesstype
+   */
+  private static function guesstype( $val )
+  {
+    $num = is_numeric($val);
+    $float = $num && strpos($val, '.')!==false;
+
+    if ( $float ) return floatval($val);
+    if ( $num ) return intval($val);
+
+    $len = strlen($val);
+    $date = ( $len==10 || $len==23 ) && preg_match('/\d{4}-\d{2}-\d{2}.*/', $val);
+
+    if ( $date ) return new DateTime($val);
+
+    return $val;
+  }
+
+
+  /*
+   * sqlsrv constants
+   */
+  const SQLSRV_FETCH_NUMERIC = 1;
+  const SQLSRV_FETCH_ASSOC = 2;
+  const SQLSRV_FETCH_BOTH = 3;
+
+  const SQLSRV_ERR_ERRORS = 0;
+  const SQLSRV_ERR_WARNINGS = 1;
+  const SQLSRV_ERR_ALL = 2;
+
+  const SQLSRV_LOG_SYSTEM_ALL = -1;
+  const SQLSRV_LOG_SYSTEM_CONN = 2;
+  const SQLSRV_LOG_SYSTEM_INIT = 1;
+  const SQLSRV_LOG_SYSTEM_OFF = 0;
+  const SQLSRV_LOG_SYSTEM_STMT = 4;
+  const SQLSRV_LOG_SYSTEM_UTIL = 8;
+
+  const SQLSRV_LOG_SEVERITY_ALL = -1;
+  const SQLSRV_LOG_SEVERITY_ERROR = 1;
+  const SQLSRV_LOG_SEVERITY_NOTICE = 4;
+  const SQLSRV_LOG_SEVERITY_WARNING = 2;
+
+  const SQLSRV_NULLABLE_YES = 1;
+  const SQLSRV_NULLABLE_NO = 0;
+  const SQLSRV_NULLABLE_UNKNOWN = 2;
+
+  const SQLSRV_PARAM_IN = 1;
+  const SQLSRV_PARAM_INOUT = 2;
+  const SQLSRV_PARAM_OUT = 0;
+
+  const SQLSRV_PHPTYPE_INT = 2;
+  const SQLSRV_PHPTYPE_DATETIME = 5;
+  const SQLSRV_PHPTYPE_FLOAT = 3;
+  function SQLSRV_PHPTYPE_STREAM( $encoding ) {
+   switch ( strval($encoding) )
+   {
+     case 'binary':
+       $r = 518;
+       break;
+     case 'char':
+       $r = 774;
+       break;
+     default:
+       $r = 6;
+       break;
+   }
+   return $r;
+  }
+  function SQLSRV_PHPTYPE_STRING( $encoding ) {
+   $en = strval($encoding);
+   if ( $en=='binary' )
+   {
+     return (49151*512)+SqlShim::MAGIC_NUM_STRING;
+   }
+   elseif ( $en=='char' )
+   {
+     return intval(49151.5*512)+SqlShim::MAGIC_NUM_STRING; // 33555204;
+   }
+   return SqlShim::MAGIC_NUM_STRING+SqlShim::MAGIC_NUM_ZERO;
+  }
+
+  const SQLSRV_ENC_BINARY = 'binary';
+  const SQLSRV_ENC_CHAR = 'char';
+
+  const SQLSRV_SQLTYPE_BIGINT = -5;
+  function SQLSRV_SQLTYPE_BINARY( $byteCount ) {
+   $bc = intval($byteCount);
+   $r = SqlShim::MAGIC_NUM_ZERO;
+   if ( $bc>0 && $bc<8001 )
+   {
+     $r = $bc*512;
+   }
+   return $r+SqlShim::MAGIC_NUM_BINARY;
+  }
+  const SQLSRV_SQLTYPE_BIT = -7;
+  function SQLSRV_SQLTYPE_CHAR( $charCount ) {
+   $cc = intval($charCount);
+   $r = SqlShim::MAGIC_NUM_ZERO;
+   if ( $cc>0 && $cc<8001 )
+   {
+     $r = $cc*512;
+   }
+   return $r+SqlShim::MAGIC_NUM_CHAR;
+  }
+  const SQLSRV_SQLTYPE_DATE = 5211;
+  const SQLSRV_SQLTYPE_DATETIME = 25177693;
+  const SQLSRV_SQLTYPE_DATETIME2 = 58734173;
+  const SQLSRV_SQLTYPE_DATETIMEOFFSET = 58738021;
+  function SQLSRV_SQLTYPE_DECIMAL( $precision, $scale ) {
+   // @TODO: figure out how to calculate return value;
+   $r = 0;
+   return $r;
+  }
+  const SQLSRV_SQLTYPE_FLOAT = 6;
+  const SQLSRV_SQLTYPE_IMAGE = -4;
+  const SQLSRV_SQLTYPE_INT = 4;
+  const SQLSRV_SQLTYPE_MONEY = 33564163;
+  function SQLSRV_SQLTYPE_NCHAR( $charCount ) {
+   $cc = intval($charCount);
+   $r = SqlShim::MAGIC_NUM_ZERO;
+   if ( $cc>0 && $cc<4001 )
+   {
+     $r = $cc*512;
+   }
+   return $r+SqlShim::MAGIC_NUM_NCHAR;
+  }
+  function SQLSRV_SQLTYPE_NUMERIC( $precision, $scale ) {
+   // @TODO: figure out how to calculate return value;
+   $r = 0;
+   return $r;
+  }
+  function SQLSRV_SQLTYPE_NVARCHAR( $charCount ) {
+   $cc = intval($charCount);
+   $r = SqlShim::MAGIC_NUM_ZERO;
+   if ( $cc>0 && $cc<4001 )
+   {
+     $r = $cc*512;
+   }
+   return $r+SqlShim::MAGIC_NUM_NVARCHAR;
+  }
+  const SQLSRV_SQLTYPE_NTEXT = -10;
+  const SQLSRV_SQLTYPE_REAL = 7;
+  const SQLSRV_SQLTYPE_SMALLDATETIME = 8285;
+  const SQLSRV_SQLTYPE_SMALLINT = 5;
+  const SQLSRV_SQLTYPE_SMALLMONEY = 33559555;
+  const SQLSRV_SQLTYPE_TEXT = -1;
+  const SQLSRV_SQLTYPE_TIME = 58728806;
+  const SQLSRV_SQLTYPE_TIMESTAMP = 4606;
+  const SQLSRV_SQLTYPE_TINYINT = -6;
+  const SQLSRV_SQLTYPE_UNIQUEIDENTIFIER = -11;
+  const SQLSRV_SQLTYPE_UDT = -151;
+  function SQLSRV_SQLTYPE_VARBINARY( $byteCount ) {
+   $bc = intval($byteCount);
+   $r = SqlShim::MAGIC_NUM_ZERO;
+   if ( $bc>0 && $bc<8001 )
+   {
+     $r = $bc*512;
+   }
+   return $r+SqlShim::MAGIC_NUM_VARBINARY;
+  }
+  function SQLSRV_SQLTYPE_VARCHAR( $charCount ) {
+   $cc = intval($charCount);
+   $r = SqlShim::MAGIC_NUM_ZERO;
+   if ( $cc>0 && $cc<8001 )
+   {
+     $r = $cc*512;
+   }
+   return $r+SqlShim::MAGIC_NUM_VARCHAR;
+  }
+  const SQLSRV_SQLTYPE_XML = -152;
+
+  const SQLSRV_TXN_READ_UNCOMMITTED = 1;
+  const SQLSRV_TXN_READ_COMMITTED = 2;
+  const SQLSRV_TXN_REPEATABLE_READ = 4;
+  const SQLSRV_TXN_SNAPSHOT = 32;
+  // const SQLSRV_TXN_READ_SERIALIZABLE = 0; ???
+
+  const SQLSRV_CURSOR_FORWARD = 'forward';
+  const SQLSRV_CURSOR_STATIC = 'static';
+  const SQLSRV_CURSOR_DYNAMIC = 'dynamic';
+  const SQLSRV_CURSOR_KEYSET = 'keyset';
+  const SQLSRV_CURSOR_CLIENT_BUFFERED = 'buffered';
+
+  const SQLSRV_SCROLL_NEXT = 1;
+  const SQLSRV_SCROLL_FIRST = 2;
+  const SQLSRV_SCROLL_LAST = 3;
+  const SQLSRV_SCROLL_PRIOR = 4;
+  const SQLSRV_SCROLL_ABSOLUTE = 5;
+  const SQLSRV_SCROLL_RELATIVE = 6;
+
+
+
+  /*
+   * sqlsrv functions...
+   */
   public static function init( $opts=[] )
   {
     if ( self::$_init ) return;
@@ -394,53 +621,5 @@ class SqlShim
   public static function server_info( $conn )
   {
 
-  }
-
-
-
-  /**
-   * Helper functions
-   */
-
-  private static function err( $errnfo )
-  {
-    self::$error_table[] = [
-      'SQLSTATE' => $errnfo[0],
-      'code' => $errnfo[1],
-      'message' => $errnfo[2],
-    ];
-  }
-
-  /**
-   * sqlsrv_typify
-   */
-  private static function typify( $row )
-  {
-    $i = 0;
-    foreach ( $row as $col=>&$val )
-    {
-      $val = self::guesstype($val);
-      $i++;
-    }
-    return $row;
-  }
-
-  /**
-   * guesstype
-   */
-  private static function guesstype( $val )
-  {
-    $num = is_numeric($val);
-    $float = $num && strpos($val, '.')!==false;
-
-    if ( $float ) return floatval($val);
-    if ( $num ) return intval($val);
-
-    $len = strlen($val);
-    $date = ( $len==10 || $len==23 ) && preg_match('/\d{4}-\d{2}-\d{2}.*/', $val);
-
-    if ( $date ) return new DateTime($val);
-
-    return $val;
   }
 }
