@@ -1,174 +1,58 @@
 <?php
-namespace { // global namespace
-
+namespace // global namespace
+{
   use RadSectors\Microshaft\SqlShim;
 
   if ( !function_exists('sqlsrv_connect') )
   {
-    define('SQLSRV_FETCH_NUMERIC', 1);
-    define('SQLSRV_FETCH_ASSOC', 2);
-    define('SQLSRV_FETCH_BOTH', 3);
 
-    define('SQLSRV_ERR_ERRORS', 0);
-    define('SQLSRV_ERR_WARNINGS', 1);
-    define('SQLSRV_ERR_ALL', 2);
-
-    define('SQLSRV_LOG_SYSTEM_ALL', -1);
-    define('SQLSRV_LOG_SYSTEM_CONN', 2);
-    define('SQLSRV_LOG_SYSTEM_INIT', 1);
-    define('SQLSRV_LOG_SYSTEM_OFF', 0);
-    define('SQLSRV_LOG_SYSTEM_STMT', 4);
-    define('SQLSRV_LOG_SYSTEM_UTIL', 8);
-
-    define('SQLSRV_LOG_SEVERITY_ALL', -1);
-    define('SQLSRV_LOG_SEVERITY_ERROR', 1);
-    define('SQLSRV_LOG_SEVERITY_NOTICE', 4);
-    define('SQLSRV_LOG_SEVERITY_WARNING', 2);
-
-    define('SQLSRV_NULLABLE_YES', 1);
-    define('SQLSRV_NULLABLE_NO', 0);
-    define('SQLSRV_NULLABLE_UNKNOWN', 2);
-
-    define('SQLSRV_PARAM_IN', 1);
-    define('SQLSRV_PARAM_INOUT', 2);
-    define('SQLSRV_PARAM_OUT', 0);
-
-    define('SQLSRV_PHPTYPE_INT', 2);
-    define('SQLSRV_PHPTYPE_DATETIME', 5);
-    define('SQLSRV_PHPTYPE_FLOAT', 3);
-    function SQLSRV_PHPTYPE_STREAM( $encoding ) {
-      switch ( strval($encoding) )
+    foreach ( (new ReflectionClass('\Radsectors\Microshaft\SqlShim'))->getConstants() as $const=>$val )
+    {
+      if ( strpos($const, 'SQLSRV_')===0 )
       {
-        case 'binary':
-          $return = 518;
-          break;
-        case 'char':
-          $return = 774;
-          break;
-        default:
-          $return = 6;
-          break;
+        define($const, $val);
       }
-      return $return;
     }
-    function SQLSRV_PHPTYPE_STRING( $encoding ) {
-      switch ( strval($encoding) )
-      {
-        case 'binary':
-          $return = 33554948;
-          break;
-        case 'char':
-          $return = 33555204;
-          break;
-        default:
-          $return = 33554436;
-          break;
-      }
-      return $return;
+    function SQLSRV_PHPTYPE_STREAM( $encoding )
+    {
+      return call_user_func([SqlShim, __FUNCTION__], $encoding);
     }
-
-    define('SQLSRV_ENC_BINARY', 'binary');
-    define('SQLSRV_ENC_CHAR', 'char');
-
-    define('SQLSRV_SQLTYPE_BIGINT', -5);
-    function SQLSRV_SQLTYPE_BINARY( $byteCount ) {
-      $bc = intval($byteCount);
-      if ( $bc>0 && $bc<8001 )
-      {
-        return ($bc*512)+SqlShim::MAGIC_NUM_BINARY;
-      }
-      return SqlShim::MAGIC_NUM_BINARY-8387584;
+    function SQLSRV_PHPTYPE_STRING( $encoding )
+    {
+      return call_user_func([SqlShim, __FUNCTION__], $encoding);
     }
-    define('SQLSRV_SQLTYPE_BIT', -7);
-    function SQLSRV_SQLTYPE_CHAR( $charCount ) {
-      $cc = intval($charCount);
-      if ( $cc>0 && $cc<8001 )
-      {
-        return ($cc*512)+SqlShim::MAGIC_NUM_CHAR;
-      }
-      return SqlShim::MAGIC_NUM_CHAR-8387584;
+    function SQLSRV_SQLTYPE_BINARY( $byteCount )
+    {
+      return call_user_func([SqlShim, __FUNCTION__], $byteCount);
     }
-    define('SQLSRV_SQLTYPE_DATE', 5211);
-    define('SQLSRV_SQLTYPE_DATETIME', 25177693);
-    define('SQLSRV_SQLTYPE_DATETIME2', 58734173);
-    define('SQLSRV_SQLTYPE_DATETIMEOFFSET', 58738021);
-    function SQLSRV_SQLTYPE_DECIMAL( $precision, $scale ) {
-      // @TODO: figure out how to calculate return value;
-      $return = 0;
-      return $return;
+    function SQLSRV_SQLTYPE_CHAR( $charCount )
+    {
+      return call_user_func([SqlShim, __FUNCTION__], $charCount);
     }
-    define('SQLSRV_SQLTYPE_FLOAT', 6);
-    define('SQLSRV_SQLTYPE_IMAGE', -4);
-    define('SQLSRV_SQLTYPE_INT', 4);
-    define('SQLSRV_SQLTYPE_MONEY', 33564163);
-    function SQLSRV_SQLTYPE_NCHAR( $charCount ) {
-      $cc = intval($charCount);
-      if ( $cc>0 && $cc<4001 )
-      {
-        return ($cc*512)+SqlShim::MAGIC_NUM_NCHAR;
-      }
-      return SqlShim::MAGIC_NUM_NCHAR-8387584;
+    function SQLSRV_SQLTYPE_DECIMAL( $precision, $scale )
+    {
+      return call_user_func([SqlShim, __FUNCTION__], $precision, $scale);
     }
-    function SQLSRV_SQLTYPE_NUMERIC( $precision, $scale ) {
-      // @TODO: figure out how to calculate return value;
-      $return = 0;
-      return $return;
+    function SQLSRV_SQLTYPE_NCHAR( $charCount )
+    {
+      return call_user_func([SqlShim, __FUNCTION__], $charCount);
     }
-    function SQLSRV_SQLTYPE_NVARCHAR( $charCount ) {
-      $cc = intval($charCount);
-      if ( $cc>0 && $cc<4001 )
-      {
-        return ($cc*512)+SqlShim::MAGIC_NUM_NVARCHAR;
-      }
-      return SqlShim::MAGIC_NUM_NVARCHAR-8387584;
+    function SQLSRV_SQLTYPE_NUMERIC( $precision, $scale )
+    {
+      return call_user_func([SqlShim, __FUNCTION__], $precision, $scale);
     }
-    define('SQLSRV_SQLTYPE_NTEXT', -10);
-    define('SQLSRV_SQLTYPE_REAL', 7);
-    define('SQLSRV_SQLTYPE_SMALLDATETIME', 8285);
-    define('SQLSRV_SQLTYPE_SMALLINT', 5);
-    define('SQLSRV_SQLTYPE_SMALLMONEY', 33559555);
-    define('SQLSRV_SQLTYPE_TEXT', -1);
-    define('SQLSRV_SQLTYPE_TIME', 58728806);
-    define('SQLSRV_SQLTYPE_TIMESTAMP', 4606);
-    define('SQLSRV_SQLTYPE_TINYINT', -6);
-    define('SQLSRV_SQLTYPE_UNIQUEIDENTIFIER', -11);
-    define('SQLSRV_SQLTYPE_UDT', -151);
-    function SQLSRV_SQLTYPE_VARBINARY( $byteCount ) {
-      $bc = intval($byteCount);
-      if ( $bc>0 && $bc<8001 )
-      {
-        return ($bc*512)+SqlShim::MAGIC_NUM_VARBINARY;
-      }
-      return SqlShim::MAGIC_NUM_VARBINARY-8387584+16775168;
+    function SQLSRV_SQLTYPE_NVARCHAR( $charCount )
+    {
+      return call_user_func([SqlShim, __FUNCTION__], $charCount);
     }
-    function SQLSRV_SQLTYPE_VARCHAR( $charCount ) {
-      $cc = intval($charCount);
-      if ( $cc>0 && $cc<8001 )
-      {
-        return ($cc*512)+SqlShim::MAGIC_NUM_VARCHAR;
-      }
-      return SqlShim::MAGIC_NUM_VARCHAR-8387584;
+    function SQLSRV_SQLTYPE_VARBINARY( $byteCount )
+    {
+      return call_user_func([SqlShim, __FUNCTION__], $byteCount);
     }
-    define('SQLSRV_SQLTYPE_XML', -152);
-
-    define('SQLSRV_TXN_READ_UNCOMMITTED', 1);
-    define('SQLSRV_TXN_READ_COMMITTED', 2);
-    define('SQLSRV_TXN_REPEATABLE_READ', 4);
-    define('SQLSRV_TXN_SNAPSHOT', 32);
-    // define('SQLSRV_TXN_READ_SERIALIZABLE', 0);
-
-    define('SQLSRV_CURSOR_FORWARD', 'forward');
-    define('SQLSRV_CURSOR_STATIC', 'static');
-    define('SQLSRV_CURSOR_DYNAMIC', 'dynamic');
-    define('SQLSRV_CURSOR_KEYSET', 'keyset');
-    // define('SQLSRV_CURSOR_BUFFERED', 0);
-
-    define('SQLSRV_SCROLL_NEXT', 1);
-    define('SQLSRV_SCROLL_FIRST', 2);
-    define('SQLSRV_SCROLL_LAST', 3);
-    define('SQLSRV_SCROLL_PRIOR', 4);
-    define('SQLSRV_SCROLL_ABSOLUTE', 5);
-    define('SQLSRV_SCROLL_RELATIVE', 6);
+    function SQLSRV_SQLTYPE_VARCHAR( $charCount )
+    {
+      return call_user_func([SqlShim, __FUNCTION__], $charCount);
+    }
 
     function sqlsrv_begin_transaction( $conn )
     {
