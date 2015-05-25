@@ -3,55 +3,60 @@ namespace // global namespace
 {
   use RadSectors\Microshaft\SqlShim;
 
-  if ( !function_exists('sqlsrv_connect') )
-  {
 
-    foreach ( (new ReflectionClass('\Radsectors\Microshaft\SqlShim'))->getConstants() as $const=>$val )
+  if ( __FUNCTION__ ) echo __FUNCTION__;
+
+  if ( !extension_loaded('sqlsrv') )
+  {
+    // set up SQLSRV_ constants
+    foreach ( (new ReflectionClass(SqlShim::NAME))->getConstants() as $const=>$val )
     {
-      if ( strpos($const, 'SQLSRV_')===0 )
+      if ( strpos($const, "SQLSRV_")===0 )
       {
         define($const, $val);
       }
     }
+
+    // functiony "constants."
     function SQLSRV_PHPTYPE_STREAM( $encoding )
     {
-      return call_user_func([SqlShim, __FUNCTION__], $encoding);
+      return call_user_func([SqlShim::NAME, __FUNCTION__], $encoding);
     }
     function SQLSRV_PHPTYPE_STRING( $encoding )
     {
-      return call_user_func([SqlShim, __FUNCTION__], $encoding);
+      return call_user_func([SqlShim::NAME, __FUNCTION__], $encoding);
     }
     function SQLSRV_SQLTYPE_BINARY( $byteCount )
     {
-      return call_user_func([SqlShim, __FUNCTION__], $byteCount);
+      return call_user_func([SqlShim::NAME, __FUNCTION__], $byteCount);
     }
     function SQLSRV_SQLTYPE_CHAR( $charCount )
     {
-      return call_user_func([SqlShim, __FUNCTION__], $charCount);
+      return call_user_func([SqlShim::NAME, __FUNCTION__], $charCount);
     }
     function SQLSRV_SQLTYPE_DECIMAL( $precision, $scale )
     {
-      return call_user_func([SqlShim, __FUNCTION__], $precision, $scale);
+      return call_user_func([SqlShim::NAME, __FUNCTION__], $precision, $scale);
     }
     function SQLSRV_SQLTYPE_NCHAR( $charCount )
     {
-      return call_user_func([SqlShim, __FUNCTION__], $charCount);
+      return call_user_func([SqlShim::NAME, __FUNCTION__], $charCount);
     }
     function SQLSRV_SQLTYPE_NUMERIC( $precision, $scale )
     {
-      return call_user_func([SqlShim, __FUNCTION__], $precision, $scale);
+      return call_user_func([SqlShim::NAME, __FUNCTION__], $precision, $scale);
     }
     function SQLSRV_SQLTYPE_NVARCHAR( $charCount )
     {
-      return call_user_func([SqlShim, __FUNCTION__], $charCount);
+      return call_user_func([SqlShim::NAME, __FUNCTION__], $charCount);
     }
     function SQLSRV_SQLTYPE_VARBINARY( $byteCount )
     {
-      return call_user_func([SqlShim, __FUNCTION__], $byteCount);
+      return call_user_func([SqlShim::NAME, __FUNCTION__], $byteCount);
     }
     function SQLSRV_SQLTYPE_VARCHAR( $charCount )
     {
-      return call_user_func([SqlShim, __FUNCTION__], $charCount);
+      return call_user_func([SqlShim::NAME, __FUNCTION__], $charCount);
     }
 
     function sqlsrv_begin_transaction( $conn )
