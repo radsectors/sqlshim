@@ -9,22 +9,71 @@ class SqlShim
   private static $options = [];
   private static $_init = false;
 
+  const NAME = __CLASS__;
+
   const SQL_INT_MAX = 2147483648;
 
-  const MAGIC_NUM_STRING = 8389636;
   const MAGIC_NUM_BINARY = 2139095550;
   const MAGIC_NUM_CHAR = 2139095041;
+  const MAGIC_NUM_DECIMAL = 3;
   const MAGIC_NUM_NCHAR = 2139095544;
   const MAGIC_NUM_NVARCHAR = 2139095543;
+  const MAGIC_NUM_NUMERIC = 2;
+  const MAGIC_NUM_STREAM = 6;
+  const MAGIC_NUM_STRING = 8389636;
   const MAGIC_NUM_VARBINARY = 2139095549;
   const MAGIC_NUM_VARCHAR = 2139095052;
 
   const MAGIC_NUM_ZERO = 8387584;
 
 
+  /**
+   * init
+   */
+  public static function init( $opts=[] )
+  {
+    if ( self::$_init ) return;
+
+    require 'register_globals.php';
+
+    self::$options = [
+     'driver' => "FreeTDS",
+     'tds_version' => "7.2",
+    ];
+    foreach ( $opts as $opt=>$val )
+    {
+     $opt = strtolower($opt);
+     switch ( $opt )
+     {
+       case 'driver':
+         self::$options[$opt] = $val;
+         break;
+       default:
+         break;
+     }
+    }
+
+    self::$error_table = [];
+    self::$fetch_table = [
+     SQLSRV_FETCH_NUMERIC => \PDO::FETCH_NUM,
+     SQLSRV_FETCH_ASSOC => \PDO::FETCH_ASSOC,
+     SQLSRV_FETCH_BOTH => \PDO::FETCH_BOTH,
+    ];
+    self::$scroll_table = [
+     SQLSRV_SCROLL_NEXT => \PDO::FETCH_ORI_NEXT,
+     SQLSRV_SCROLL_FIRST => \PDO::FETCH_ORI_FIRST,
+     SQLSRV_SCROLL_LAST => \PDO::FETCH_ORI_LAST,
+     SQLSRV_SCROLL_PRIOR => \PDO::FETCH_ORI_PRIOR,
+     SQLSRV_SCROLL_ABSOLUTE => \PDO::FETCH_ORI_ABS,
+     SQLSRV_SCROLL_RELATIVE => \PDO::FETCH_ORI_REL,
+    ];
+
+    self::$_init = true;
+  }
+
 
   /**
-   * Helper functions
+   * err
    */
   private static function err( $errnfo )
   {
@@ -36,7 +85,7 @@ class SqlShim
   }
 
   /**
-   * sqlsrv_typify
+   * typify
    */
   private static function typify( $row )
   {
@@ -98,97 +147,129 @@ class SqlShim
 
   const SQLSRV_PARAM_IN = 1;
   const SQLSRV_PARAM_INOUT = 2;
-  const SQLSRV_PARAM_OUT = 0;
+  const SQLSRV_PARAM_OUT = 4;
 
   const SQLSRV_PHPTYPE_INT = 2;
   const SQLSRV_PHPTYPE_DATETIME = 5;
   const SQLSRV_PHPTYPE_FLOAT = 3;
-  function SQLSRV_PHPTYPE_STREAM( $encoding ) {
-   switch ( strval($encoding) )
-   {
-     case 'binary':
-       $r = 518;
-       break;
-     case 'char':
-       $r = 774;
-       break;
-     default:
-       $r = 6;
-       break;
-   }
-   return $r;
+  public static function SQLSRV_PHPTYPE_STREAM( $encoding )
+	{
+    $en = strval($encoding);
+    $r = 0;
+    if ( $en=='binary' )
+    {
+      $r = 1; //518;
+    }
+    elseif ( $en=='char' )
+    {
+      $r = 1.5; //774;
+    }
+    return $r*512+self::MAGIC_NUM_STREAM;
   }
-  function SQLSRV_PHPTYPE_STRING( $encoding ) {
-   $en = strval($encoding);
-   if ( $en=='binary' )
-   {
-     return (49151*512)+SqlShim::MAGIC_NUM_STRING;
-   }
-   elseif ( $en=='char' )
-   {
-     return intval(49151.5*512)+SqlShim::MAGIC_NUM_STRING; // 33555204;
-   }
-   return SqlShim::MAGIC_NUM_STRING+SqlShim::MAGIC_NUM_ZERO;
+  public static function SQLSRV_PHPTYPE_STRING( $encoding )
+	{
+    $en = strval($encoding);
+    // $r = null;
+    if ( $en=='binary' )
+    {
+      $r = 1;
+    }
+    elseif ( $en=='char' )
+    {
+      $r = 1.5;
+    }
+    return (49150+$r)*512+self::MAGIC_NUM_STRING;
   }
+  const SQLSRV_PHPTYPE_NULL = 1;
 
   const SQLSRV_ENC_BINARY = 'binary';
   const SQLSRV_ENC_CHAR = 'char';
 
   const SQLSRV_SQLTYPE_BIGINT = -5;
-  function SQLSRV_SQLTYPE_BINARY( $byteCount ) {
-   $bc = intval($byteCount);
-   $r = SqlShim::MAGIC_NUM_ZERO;
-   if ( $bc>0 && $bc<8001 )
-   {
-     $r = $bc*512;
-   }
-   return $r+SqlShim::MAGIC_NUM_BINARY;
+  public static function SQLSRV_SQLTYPE_BINARY( $byteCount )
+	{
+    $bc = intval($byteCount);
+    $r = self::MAGIC_NUM_ZERO;
+    if ( $bc==-1 )
+    {
+      $r += 512;
+    }
+    elseif ( $bc>=1 && $bc<=8000 )
+    {
+      $r = $bc*512;
+    }
+    return $r+self::MAGIC_NUM_BINARY;
   }
   const SQLSRV_SQLTYPE_BIT = -7;
-  function SQLSRV_SQLTYPE_CHAR( $charCount ) {
-   $cc = intval($charCount);
-   $r = SqlShim::MAGIC_NUM_ZERO;
-   if ( $cc>0 && $cc<8001 )
-   {
-     $r = $cc*512;
-   }
-   return $r+SqlShim::MAGIC_NUM_CHAR;
+  public static function SQLSRV_SQLTYPE_CHAR( $charCount )
+	{
+    $cc = intval($charCount);
+    $r = self::MAGIC_NUM_ZERO;
+    if ( $bc==-1 )
+    {
+      $r += 512;
+    }
+    elseif ( $cc>0 && $cc<=8000 )
+    {
+      $r = $cc*512;
+    }
+    return $r+self::MAGIC_NUM_CHAR;
   }
   const SQLSRV_SQLTYPE_DATE = 5211;
   const SQLSRV_SQLTYPE_DATETIME = 25177693;
   const SQLSRV_SQLTYPE_DATETIME2 = 58734173;
   const SQLSRV_SQLTYPE_DATETIMEOFFSET = 58738021;
-  function SQLSRV_SQLTYPE_DECIMAL( $precision, $scale ) {
-   // @TODO: figure out how to calculate return value;
-   $r = 0;
-   return $r;
+  public static function SQLSRV_SQLTYPE_DECIMAL( $precision, $scale )
+  {
+    $pc = intval($precision);
+    $r = self::MAGIC_NUM_ZERO;
+    if ( $pc>=0 && $pc<=38 )
+    {
+      $r = $pc*512;
+    };
+    return $r+self::MAGIC_NUM_DECIMAL;
   }
   const SQLSRV_SQLTYPE_FLOAT = 6;
   const SQLSRV_SQLTYPE_IMAGE = -4;
   const SQLSRV_SQLTYPE_INT = 4;
   const SQLSRV_SQLTYPE_MONEY = 33564163;
-  function SQLSRV_SQLTYPE_NCHAR( $charCount ) {
-   $cc = intval($charCount);
-   $r = SqlShim::MAGIC_NUM_ZERO;
-   if ( $cc>0 && $cc<4001 )
-   {
-     $r = $cc*512;
-   }
-   return $r+SqlShim::MAGIC_NUM_NCHAR;
+  public static function SQLSRV_SQLTYPE_NCHAR( $charCount )
+  {
+    $cc = intval($charCount);
+    $r = self::MAGIC_NUM_ZERO;
+    if ( $bc==-1 )
+    {
+      $r += 512;
+    }
+    elseif ( $cc>0 && $cc<=4000 )
+    {
+      $r = $cc*512;
+    }
+    return $r+self::MAGIC_NUM_NCHAR;
   }
-  function SQLSRV_SQLTYPE_NUMERIC( $precision, $scale ) {
-   // @TODO: figure out how to calculate return value;
-   $r = 0;
-   return $r;
+  public static function SQLSRV_SQLTYPE_NUMERIC( $precision, $scale )
+  {
+    $pc = intval($precision);
+    $r = self::MAGIC_NUM_ZERO;
+    if ( $pc>=0 && $pc<=38 )
+    {
+      $r = $pc*512;
+    };
+    return $r+self::MAGIC_NUM_NUMERIC;
   }
-  function SQLSRV_SQLTYPE_NVARCHAR( $charCount ) {
-   $cc = intval($charCount);
-   $r = SqlShim::MAGIC_NUM_ZERO;
-   if ( $cc>0 && $cc<4001 )
-   {
-     $r = $cc*512;
-   }
-   return $r+SqlShim::MAGIC_NUM_NVARCHAR;
+  public static function SQLSRV_SQLTYPE_NVARCHAR( $charCount )
+	{
+    $cc = intval($charCount);
+    $r = self::MAGIC_NUM_ZERO;
+    if ( $bc==-1 )
+    {
+      $r += 512;
+    }
+    elseif ( $cc>0 && $cc<=4000 )
+    {
+      $r = $cc*512;
+    }
+    return $r+self::MAGIC_NUM_NVARCHAR;
   }
   const SQLSRV_SQLTYPE_NTEXT = -10;
   const SQLSRV_SQLTYPE_REAL = 7;
@@ -201,23 +282,33 @@ class SqlShim
   const SQLSRV_SQLTYPE_TINYINT = -6;
   const SQLSRV_SQLTYPE_UNIQUEIDENTIFIER = -11;
   const SQLSRV_SQLTYPE_UDT = -151;
-  function SQLSRV_SQLTYPE_VARBINARY( $byteCount ) {
-   $bc = intval($byteCount);
-   $r = SqlShim::MAGIC_NUM_ZERO;
-   if ( $bc>0 && $bc<8001 )
-   {
-     $r = $bc*512;
-   }
-   return $r+SqlShim::MAGIC_NUM_VARBINARY;
+  public static function SQLSRV_SQLTYPE_VARBINARY( $byteCount )
+	{
+    $bc = intval($byteCount);
+    $r = self::MAGIC_NUM_ZERO;
+    if ( $bc==-1 )
+    {
+      $r += 512;
+    }
+    elseif ( $bc>0 && $bc<=8000 )
+    {
+      $r = $bc*512;
+    }
+    return $r+self::MAGIC_NUM_VARBINARY;
   }
-  function SQLSRV_SQLTYPE_VARCHAR( $charCount ) {
-   $cc = intval($charCount);
-   $r = SqlShim::MAGIC_NUM_ZERO;
-   if ( $cc>0 && $cc<8001 )
-   {
-     $r = $cc*512;
-   }
-   return $r+SqlShim::MAGIC_NUM_VARCHAR;
+  public static function SQLSRV_SQLTYPE_VARCHAR( $charCount )
+	{
+    $cc = intval($charCount);
+    $r = self::MAGIC_NUM_ZERO;
+    if ( $bc==-1 )
+    {
+      $r += 512;
+    }
+    elseif ( $cc>0 && $cc<=8000 )
+    {
+      $r = $cc*512;
+    }
+    return $r+self::MAGIC_NUM_VARCHAR;
   }
   const SQLSRV_SQLTYPE_XML = -152;
 
@@ -225,7 +316,7 @@ class SqlShim
   const SQLSRV_TXN_READ_COMMITTED = 2;
   const SQLSRV_TXN_REPEATABLE_READ = 4;
   const SQLSRV_TXN_SNAPSHOT = 32;
-  // const SQLSRV_TXN_READ_SERIALIZABLE = 0; ???
+  const SQLSRV_TXN_SERIALIZABLE = 8;
 
   const SQLSRV_CURSOR_FORWARD = 'forward';
   const SQLSRV_CURSOR_STATIC = 'static';
@@ -245,47 +336,6 @@ class SqlShim
   /*
    * sqlsrv functions...
    */
-  public static function init( $opts=[] )
-  {
-    if ( self::$_init ) return;
-
-    require 'register_globals.php';
-
-    self::$options = [
-      'driver' => "FreeTDS",
-      'tds_version' => "7.2",
-    ];
-    foreach ( $opts as $opt=>$val )
-    {
-      $opt = strtolower($opt);
-      switch ( $opt )
-      {
-        case 'driver':
-          self::$options[$opt] = $val;
-          break;
-        default:
-          break;
-      }
-    }
-
-    self::$error_table = [];
-    self::$fetch_table = [
-      SQLSRV_FETCH_NUMERIC => \PDO::FETCH_NUM,
-      SQLSRV_FETCH_ASSOC => \PDO::FETCH_ASSOC,
-      SQLSRV_FETCH_BOTH => \PDO::FETCH_BOTH,
-    ];
-    self::$scroll_table = [
-      SQLSRV_SCROLL_NEXT => \PDO::FETCH_ORI_NEXT,
-      SQLSRV_SCROLL_FIRST => \PDO::FETCH_ORI_FIRST,
-      SQLSRV_SCROLL_LAST => \PDO::FETCH_ORI_LAST,
-      SQLSRV_SCROLL_PRIOR => \PDO::FETCH_ORI_PRIOR,
-      SQLSRV_SCROLL_ABSOLUTE => \PDO::FETCH_ORI_ABS,
-      SQLSRV_SCROLL_RELATIVE => \PDO::FETCH_ORI_REL,
-    ];
-
-    self::$_init = true;
-  }
-
 
   /**
    * sqlsrv_begin_transaction
@@ -300,7 +350,7 @@ class SqlShim
    */
   public static function cancel( $stmt )
   {
-
+    // no PDO equivalent for this API
   }
 
   /**
@@ -308,7 +358,8 @@ class SqlShim
    */
   public static function client_info( $conn )
   {
-
+    // closest thing i could find.
+    return $conn->getAvailableDrivers();
   }
 
   /**
@@ -325,7 +376,7 @@ class SqlShim
    */
   public static function commit( $conn )
   {
-
+    $conn->commit();
   }
 
   /**
@@ -333,7 +384,9 @@ class SqlShim
    */
   public static function configure( $setting, $value )
   {
-
+    // http://php.net/manual/en/function.sqlsrv-configure.php#refsect1-function.sqlsrv-configure-parameters
+    // http://php.net/manual/en/pdo.setattribute.php#refsect1-pdo.setattribute-description
+    return true;
   }
 
   /**
@@ -363,10 +416,12 @@ class SqlShim
         $connectionInfo['UID'],
         $connectionInfo['PWD']
       );
-
-      $return->setAttribute(\PDO::ATTR_EMULATE_PREPARES, true);
       $return->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-      // $return->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
+      $return->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_NATURAL);
+      $return->setAttribute(\PDO::ATTR_ORACLE_NULLS, \PDO::NULL_NATURAL);
+      $return->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
+      $return->setAttribute(\PDO::ATTR_EMULATE_PREPARES, true);
+      $return->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
     }
     catch ( \PDOException $e )
     {
