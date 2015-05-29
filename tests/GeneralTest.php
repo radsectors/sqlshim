@@ -1,11 +1,9 @@
 <?php
+use RadSectors\SqlShim;
 
 
 class GeneralTest extends PHPUnit_Framework_TestCase
 {
-
-  private static $windows = false;
-
   public function setUp()
   {
 
@@ -21,7 +19,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
    */
   public function testInit()
   {
-    \RadSectors\Microshaft\SqlShim::init();
+    var_dump(\RadSectors\SqlShim::init());
 
     // if ( !extension_loaded('sqlsrv') && function_exists('sqlsrv_connect') )
     // {
@@ -51,7 +49,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
     {
       if ( strpos($const, 'SQLSRV_')===0 )
       {
-        $cval = constant(\RadSectors\Microshaft\SqlShim::NAME . "::" .$const);
+        $cval = constant(SqlShim::NAME . "::" . str_replace('SQLSRV_', '', $const));
         $val = constant($const);
         $compare = ($val===$cval);
         echo !$compare ? "$const: c$cval vs g$val" : "";
@@ -70,26 +68,26 @@ class GeneralTest extends PHPUnit_Framework_TestCase
     //   'SQLSRV_SQLTYPE_VARBINARY' => [0, 1, 8000],
     //   'SQLSRV_SQLTYPE_VARCHAR' => [0, 1, 8000],
     ];
-    $functions = get_extension_funcs('sqlsrv');
-    foreach ( $functions as $func )
-    {
-      if ( strpos($func, 'SQLSRV_')===0 )
-      {
-        try
-        {
-          $cval = call_user_func(\RadSectors\Microshaft\SqlShim::NAME . "::$func", -9000);
-          // $cval = call_user_func($func, 1);
-          $gval = call_user_func($func, -9000);
-          $compare = ($gval===$cval);
-          echo !$compare ? "$func: c$cval vs g$gval\n" : "";
-          $this->assertTrue($compare);
-        }
-        catch ( Exception $e )
-        {
-          // var_dump($e);
-        }
-      }
-    }
+    // $functions = get_extension_funcs('sqlsrv');
+    // foreach ( $functions as $func )
+    // {
+    //   if ( strpos($func, 'SQLSRV_')===0 )
+    //   {
+    //     try
+    //     {
+    //       $cval = call_user_func(\RadSectors\SqlShim::NAME . "::$func", 0);
+    //       // $cval = call_user_func($func, 1);
+    //       $gval = call_user_func($func, 0);
+    //       $compare = ($gval===$cval);
+    //       echo !$compare ? "$func: c$cval vs g$gval\n" : "";
+    //       $this->assertTrue($compare);
+    //     }
+    //     catch ( Exception $e )
+    //     {
+    //       // var_dump($e);
+    //     }
+    //   }
+    // }
   }
 
   /**
@@ -102,26 +100,25 @@ class GeneralTest extends PHPUnit_Framework_TestCase
     $con = sqlsrv_connect(
       HOSTNAME,
       [
-        "Database" => DATABASE,
-        "UID" => USERNAME,
-        "PWD" => PASSWORD,
+        'Database' => DATABASE,
+        'UID' => USERNAME,
+        'PWD' => PASSWORD,
         'CharacterSet'=>'UTF-8',
       ]
     );
 
-    // if ( is_object($con) && get_class($con)=="PDO" )
-    // {
-    //   echo "sqlshim.";
-    // }
-    // elseif ( get_resource_type($con)=="SQL Server Connection" )
-    // {
-    //   echo "sqlsrv.";
-    // }
-    // else
-    // {
-    //   echo "failure.";
-    //   var_dump(sqlsrv_errors());
-    // }
+    if ( is_object($con) && get_class($con)=="PDO" )
+    {
+      //
+    }
+    elseif ( is_resource($con) && get_resource_type($con)=="SQL Server Connection" )
+    {
+      //
+    }
+    else
+    {
+      var_dump(sqlsrv_errors());
+    }
     $this->assertTrue($con!==false);
 
     return $con;
@@ -133,10 +130,17 @@ class GeneralTest extends PHPUnit_Framework_TestCase
    */
   public function testClientInfo( $con )
   {
-    if ( $con!==false )
-    {
-      // var_dump(sqlsrv_client_info($con));
-    }
+    var_dump(sqlsrv_client_info($con));
+  }
+
+
+  /**
+   * @depends testConnection
+   */
+  public function testServer( $con )
+  {
+    // var_dump(SqlShim::server_info($con));
+    var_dump(sqlsrv_server_info($con));
   }
 
 

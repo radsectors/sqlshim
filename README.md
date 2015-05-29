@@ -18,8 +18,7 @@ Please remember that this software is in alpha stages and far from production-re
 
 ## Motivation
 
-sqlshim was born out of the need for
-[sqlsrv](http://php.net/manual/en/book.sqlsrv.php) compatibility in local non-Windows development environments.
+sqlshim was born out of the need for [sqlsrv](http://php.net/manual/en/book.sqlsrv.php) compatibility in local non-Windows development environments.
 
 
 ## Installation
@@ -62,11 +61,7 @@ On Mac OS X:
 FreeTDS = Installed
 
 [FreeTDS]
-Description = FreeTDS driver
 Driver = /path/to/libtdsodbc.so
-Setup = /path/to/libtdsS.so
-FileUsage = 1
-UsageCount = 1
 ```
 
 3. Then, set your ODBCINST environment variable to the location of your odbcinst.ini file.
