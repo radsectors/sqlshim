@@ -19,7 +19,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
    */
   public function testInit()
   {
-    var_dump(\RadSectors\SqlShim::init());
+    \RadSectors\SqlShim::init();
 
     // if ( !extension_loaded('sqlsrv') && function_exists('sqlsrv_connect') )
     // {
@@ -117,6 +117,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
     }
     else
     {
+      echo "Errors:\n";
       var_dump(sqlsrv_errors());
     }
     $this->assertTrue($con!==false);
@@ -130,7 +131,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
    */
   public function testClientInfo( $con )
   {
-    var_dump(sqlsrv_client_info($con));
+    //var_dump(sqlsrv_client_info($con));
   }
 
 
@@ -140,7 +141,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
   public function testServer( $con )
   {
     // var_dump(SqlShim::server_info($con));
-    var_dump(sqlsrv_server_info($con));
+    //var_dump(sqlsrv_server_info($con));
   }
 
 
@@ -151,13 +152,16 @@ class GeneralTest extends PHPUnit_Framework_TestCase
   {
     if ( $con!==false )
     {
-      $stmt = sqlsrv_query($con, "SELECT * FROM Northwind.Customers;", ['UK', 'Sweden', 'Mexico']);
+      $stmt = sqlsrv_query($con, "SELECT * FROM Northwind.Customers;");
       $rows = [];
-      while ( $row = sqlsrv_fetch_object($stmt) )
+      while ( $row = sqlsrv_fetch_array($stmt) )
       {
         $rows[] = $row;
       }
+      var_dump($rows);
       $this->assertCount(91, $rows);
+
+      var_dump(sqlsrv_field_metadata($stmt));
 
       $stmt = sqlsrv_query($con, "SELECT * FROM Northwind.Customers WHERE Country IN (?, ?, ?);", ['UK', 'Sweden', 'Mexico']);
       $rows = [];
@@ -166,11 +170,28 @@ class GeneralTest extends PHPUnit_Framework_TestCase
         $rows[] = $row;
       }
       $this->assertCount(14, $rows);
-
-      return $con;
     }
-    return false;
   }
+
+
+  /**
+   * @depends testConnection
+   */
+  // public function testStoredProcedure( $con )
+  // {
+  //   if ( $con!==false )
+  //   {
+  //     $stmt = sqlsrv_query($con, "{ CALL SalesByCategory( ?, ? ) }", ["Meat/Poultry", null]);
+  //     $rows = [];
+  //     while ( $row = sqlsrv_fetch_array($stmt) )
+  //     {
+  //       $rows[] = $row;
+  //     }
+  //     var_dump($rows);
+  //
+  //   }
+  //   return false;
+  // }
 
 
   /**
@@ -185,8 +206,6 @@ class GeneralTest extends PHPUnit_Framework_TestCase
       // sqlsrv_prepare($cono, )
 
       sqlsrv_rollback($con);
-
-      return $con;
     }
     return false;
   }

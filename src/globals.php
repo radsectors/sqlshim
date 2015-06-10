@@ -357,10 +357,12 @@ namespace
     }
 
     /**
-     * Retrieves metadata for the fields of a statement prepared by sqlsrv_prepare() or {@see \sqlsrv_query()}
+     * Retrieves metadata for the fields of a statement prepared by sqlsrv_prepare() or sqlsrv_query()
      *
-     * @param \PDOStatement $stmt
-     * @return array[]|false
+     * Retrieves metadata for the fields of a statement prepared by sqlsrv_prepare() or sqlsrv_query(). sqlsrv_field_metadata() can be called on a statement before or after statement execution.
+     *
+     * @param \PDOStatement $stmt The statment resource for which metadata is returned.
+     * @return array[]|false Returns an array of arrays on success. Otherwise, FALSE is returned.
      */
     function sqlsrv_field_metadata( $stmt )
     {

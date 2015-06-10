@@ -1,0 +1,30 @@
+# Change Log
+All notable changes to this project will be documented in this file.
+This project adheres to [Semantic Versioning](http://semver.org/).
+
+## [Unreleased][unreleased]
+### Added
+- Figure out a way to duplicate sqlsrv_field_metadata().
+- Figure out a way to duplicate sqlsrv_cancel() ```$stmt = null```?
+- Figure out how ```$scale``` parameter is used in SQLTYPE_DECIMAL() and SQLTYPE_NUMERIC().
+
+### Changed
+- Make client_info() more reliable.
+
+## [0.0.2] - 2015-06-09
+### Added
+- Logic to a few more functions.
+
+### Changed
+- Renamed class constants (removed SQLSRV_ prefixes.)
+- Improved (I think) error logging function.
+
+### Fixed
+- A glaring bug where the fetch functions return false instead of null when there are no records to fetch.
+
+## [0.0.1] - 2015-05-28
+### Added
+- First alpha release.
+
+[unreleased]: https://github.com/radsectors/sqlshim/compare/v0.0.2...HEAD
+[0.0.2]: https://github.com/radsectors/sqlshim/compare/v0.0.1...v0.0.2
