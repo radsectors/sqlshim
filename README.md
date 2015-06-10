@@ -1,9 +1,10 @@
 # sqlshim
-Provides replacement sqlsrv driver functions in PHP for Linux/OS X.
+Provides sqlsrv driver functions in PHP for Linux/OS X.
 
 
 ## Synopsis
 
+sqlshim started out as a small set of functions that mimicked the behavior of just a select few of the functions provided by the sqlsrv driver PHP extension.
 sqlshim does not **yet** fully replace or duplicate ALL sqlsrv driver functionality. All of the functions have been defined, but only the most commonly used (in my own professional experiences) have been fleshed out.
 Please remember that this software is in alpha stages and far from production-ready. It is provided as-is and without warranty. I am not responsible for any damages incurred from its use.
 
@@ -30,7 +31,7 @@ On Debian or Ubuntu:
 ```apt-get install freetds-bin``` or ```freetds-common```
 
 On Mac OS X, using homebrew
-```brew install freetds```
+```brew install freetds``` or ```port install freetds```
 
 
 ### Install PDO Driver
@@ -39,7 +40,7 @@ On Debian or Ubuntu:
 ```apt-get install php5-sybase```
 
 On Mac OS X:
-```brew install php5-pdo-dblib```
+```brew install php5-pdo-dblib``` or ```port install php5*-?```
 
 ### Install ODBC
 
@@ -47,7 +48,7 @@ On Debian or Ubuntu:
 ```apt-get install unixodbc```
 
 On Mac OS X:
-```brew install unixodbc```
+```brew install unixodbc``` or ```port install unixodbc```
 
 
 ### Configure ODBC
@@ -86,6 +87,31 @@ http://www.acloudtree.com/how-to-install-freetds-and-unixodbc-on-osx-using-homeb
 https://msdn.microsoft.com/en-us/library/ff628167.aspx
 
 http://forum.lazarus.freepascal.org/index.php?topic=24352.0
+
+- links from Michael
+
+http://www.unixodbc.org/doc/FreeTDS.html
+
+http://voyte.ch/getting-php-in-homebrew-to-access-mssql-via/
+
+http://lkrms.org/php-with-freetds-on-os-x-mavericks/
+
+http://lucasmanual.com/mywiki/unixODBC
+
+http://stackoverflow.com/a/19913147/723007
+
+http://www.cerebralmastication.com/2013/01/installing-debugging-odbc-on-mac-os-x/
+
+http://blog.mattwoodward.com/2012/08/creating-datasource-with-freetds-and.html
+
+https://gist.github.com/sixfeetover/565440
+
+https://gist.github.com/Bouke/10454272
+
+https://github.com/byllc/config/blob/master/.bash_profile
+
+http://lists.ibiblio.org/pipermail/freetds/2011q4/027495.html
+
 
 
 ## Tests
