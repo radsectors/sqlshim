@@ -10,6 +10,7 @@ class SqlShim
 {
   private static $options = [];
 
+  private static $tabcursor;
   private static $tabfetch;
   private static $tabscroll;
 
@@ -46,6 +47,7 @@ class SqlShim
     self::$options = [
       'driver' => "FreeTDS",
       'tds_version' => "7.2",
+      'autotype_fields' => false,
       // 'odbcini' => "/etc/odbc.ini",
       // 'odbcinstini' => "/etc/odbcinst.ini",
     ];
@@ -75,6 +77,13 @@ class SqlShim
 
     self::$errors = [];
 
+    self::$tabcursor = [
+      self::CURSOR_FORWARD => \PDO::CURSOR_FWDONLY,
+      self::CURSOR_STATIC => \PDO::CURSOR_FWDONLY, // ???
+      self::CURSOR_DYNAMIC => \PDO::CURSOR_SCROLL, // ???
+      self::CURSOR_KEYSET => \PDO::CURSOR_FWDONLY, // ???
+      self::CURSOR_CLIENT_BUFFERED => \PDO::CURSOR_FWDONLY, // ???
+    ];
     self::$tabfetch = [
       self::FETCH_NUMERIC => \PDO::FETCH_NUM,
       self::FETCH_ASSOC => \PDO::FETCH_ASSOC,
@@ -92,25 +101,57 @@ class SqlShim
     // for global function registration
     // @REVIEW open to suggestions on a better way to do this.
     $FUNCTION = self::NAME . "::" . __FUNCTION__;
-    $registered = require('register_globals.php');
+    $registered = require( __DIR__ . '/globals.php');
 
     self::$_init = true;
   }
 
 
   /**
-   * @internal Sends error info to error collector
+   * @internal Collects error info to internal error log
    *
-   * @param array $errnfo Error Info
+   * @param mixed $e Error Info
    * @return void
    */
-  private static function err( $errnfo )
+  private static function log_err( $e )
   {
-    self::$errors[] = [
-      'SQLSTATE' => $errnfo[0],
-      'code' => $errnfo[1],
-      'message' => $errnfo[2],
-    ];
+    if ( is_array($e) )
+    {
+      self::$errors[] = [
+        'SQLSTATE' => $e[0],
+        'code' => $e[1],
+        'message' => $e[2],
+      ];
+      return;
+    }
+
+    if ( is_object($e) && get_class($e)=="PDOException" )
+    {
+      if ( !empty($e->errorInfo) && is_array($e->errorInfo) )
+      {
+        self::log_err($e->errorInfo);
+        return;
+      }
+      elseif ( method_exists($e, 'getMessage') && (bool)preg_replace_callback(
+          "/SQLSTATE\[(\d+)\] .*: (\d+) (.*)/",
+          function ( $matches )
+          {
+            if ( count($matches) )
+            {
+              self::log_err(array_slice($matches, 1));
+              return "1";
+            }
+            return "0";
+          },
+          $e->getMessage()
+        )
+      )
+      {
+        return;
+      }
+    }
+    self::log_err(["???","?","Unknown error"]);
+    return;
   }
 
   /**
@@ -136,19 +177,25 @@ class SqlShim
    */
   private static function guesstype( $val )
   {
-    $num = is_numeric($val);
-    $float = $num && strpos($val, '.')!==false;
+    if ( self::$options['autotype_fields'] )
+    {
+      $num = is_numeric($val);
+      $float = $num && strpos($val, '.')!==false;
 
-    if ( $float ) return floatval($val);
-    if ( $num ) return intval($val);
+      if ( $float ) return floatval($val);
+      if ( $num ) return intval($val);
+    }
 
     $len = strlen($val);
-    $date = ( $len==10 || $len==23 ) && preg_match('/\d{4}-\d{2}-\d{2}.*/', $val);
 
-    if ( $date ) return new DateTime($val);
+    if ( ( $len==10 || $len==23 ) && preg_match('/\d{4}-\d{2}-\d{2}.*/', $val) )
+    {
+      return new \DateTime($val);
+    }
 
     return $val;
   }
+
 
 
   /*
@@ -387,18 +434,21 @@ class SqlShim
   }
 
 
-  public static function begin_transaction( $conn )
+  public static function begin_transaction( \PDO $conn )
   {
     return $conn->beginTransaction();
   }
 
-  public static function cancel( $stmt )
+  public static function cancel( \PDOStatement $stmt )
   {
     // no PDO equivalent for this API
   }
 
-  public static function client_info( $conn )
+  public static function client_info( \PDO $conn )
   {
+    // \PDO::ATTR_CLIENT_VERSION (integer)
+    // REVIEW: these system() calls may actually be way too system-dependent.
+    // the first one is actually terrible and won't even work reliably.
     return [
       'DriverDLLName' => basename(array_pop(explode(" ", exec("cat /etc/odbcinst.ini | grep Driver")))),
       'DriverODBCVer' => array_pop(explode(" ", exec("isql --version"))),
@@ -407,13 +457,12 @@ class SqlShim
     ];
   }
 
-  public static function close( $conn )
+  public static function close( \PDO $conn )
   {
-    // TODO: close() - test this.
     return ($conn = null);
   }
 
-  public static function commit( $conn )
+  public static function commit( \PDO $conn )
   {
     $conn->commit();
   }
@@ -428,7 +477,7 @@ class SqlShim
 
   public static function connect( $serverName, $connectionInfo )
   {
-    // TODO: research prefixes? do something with them?
+    // IDEA: research prefixes? do something with them?
     $serverName = str_replace('tcp:','',$serverName);
 
     // default port
@@ -449,25 +498,16 @@ class SqlShim
         $connectionInfo['PWD']
       );
       $conn->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-      $conn->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_NATURAL);
-      $conn->setAttribute(\PDO::ATTR_ORACLE_NULLS, \PDO::NULL_NATURAL);
-      $conn->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
       $conn->setAttribute(\PDO::ATTR_EMULATE_PREPARES, true);
+      $conn->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_NATURAL);
+      $conn->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
       $conn->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
+      $conn->prepare('SET ANSI_WARNINGS ON')->execute();
+      $conn->prepare('SET ANSI_NULLS ON')->execute();
     }
     catch ( \PDOException $e )
     {
-      preg_replace_callback(
-        "/SQLSTATE\[(\d+)\] .*: (\d+) (.*)/",
-        function ( $matches )
-        {
-          if ( count($matches) )
-          {
-            self::err(array_slice($matches, 1));
-          }
-        },
-        $e->getMessage()
-      );
+      self::log_err($e);
       return false;
     }
     return $conn;
@@ -479,71 +519,103 @@ class SqlShim
     return self::$errors;
   }
 
-  public static function execute( $stmt )
+  public static function execute( \PDOStatement $stmt )
   {
     return $stmt->execute();
   }
 
-  public static function fetch_array( $stmt, $fetchType=self::FETCH_BOTH, $row=self::SCROLL_NEXT, $offset=0 )
+  public static function fetch_array( \PDOStatement $stmt, $fetchType=self::FETCH_BOTH, $row=self::SCROLL_NEXT, $offset=0 )
   {
     try {
-      $return = $stmt->fetch(
+      $array = $stmt->fetch(
         self::$tabfetch[$fetchType],
         self::$tabscroll[$row],
         $offset
       );
-      if ( is_array($return) )
+      if ( is_array($array) )
       {
-        $return = self::typify($return);
+        return self::typify($array);
       }
     }
     catch ( \PDOException $e )
     {
-      self::err($e);
-      $return = false;
+      self::log_err($e);
+      // error fetching (false)
+      return false;
     }
 
-    return $return;
+    // fetch with no errors (null)
+    return null;
   }
 
-  public static function fetch_object( $stmt, $className='stdClass', $ctorParams=[], $row=self::SCROLL_NEXT, $offset=0 )
+  public static function fetch_object( \PDOStatement $stmt, $className='stdClass', $ctorParams=[], $row=self::SCROLL_NEXT, $offset=0 )
   {
     try {
-      $stmt->setFetchMode(\PDO::FETCH_CLASS, $className, $ctorParams);
-      $return = $stmt->fetch(
-        \PDO::FETCH_CLASS,
+      $object = $stmt->fetch(
+        \PDO::FETCH_ASSOC,
         self::$tabscroll[$row],
         $offset
       );
+      // $object = $stmt->fetchObject(
+      //   $className,
+      //   $ctorParams
+      // );
+      // testing block
+      if ( is_array($object) )
+      {
+        $object = (object)$object;
+      }
+      if ( is_object($object) )
+      {
+        return self::typify($object);
+      }
     }
     catch ( \PDOException $e )
     {
-      self::err($e);
-      $return = false;
+      self::log_err($e);
+      return false;
     }
 
-    if ( is_object($return) )
+    return null; // fetch with no more records (null)
+  }
+
+  public static function fetch( \PDOStatement $stmt, $row, $offset )
+  {
+    try
     {
-      $return = self::typify($return);
+      $array = $stmt->fetch(\PDO::FETCH_NUM, self::$tabscroll[$row], $offset);
+      if ( is_array($array) )
+      {
+        return self::typify($array);
+      }
+
     }
-
-    return $return;
+    catch ( \PDOException $e )
+    {
+      self::log_err($e);
+      return false;
+    }
+    return null;
   }
 
-  public static function fetch( $stmt, $row, $offset )
+  public static function field_metadata( \PDOStatement $stmt )
   {
-    return $stmt->fetch(\PDO::FETCH_NUM, self::$tabscroll[$row], $offset);
+    // NOTE: PDOStatement->getColumnMeta() is an "EXPERIMENTAL" function. And its request not supported by driver.
+    // HACK: Implement our own? probably won't work (at first glance)
+    // check: http://community.sitepoint.com/t/pdo-getcolumnmeta-bug/3430/2
+    // credit: http://vancelucas.com/
+    return false;
+    // $metadata = [];
+    // for ( $i=0; $i<$stmt->columnCount(); $i++ )
+    // {
+    //   $metadata[] = $stmt->getColumnMeta($i);
+    // }
+    // return $metadata;
   }
 
-  public static function field_metadata( $stmt, $row, $offset )
+  public static function free_stmt( \PDOStatement $stmt )
   {
-    // TODO: field_metadata()
-  }
-
-  public static function free_stmt( $stmt )
-  {
-    $return = $stmt->closeCursor();
-    return $return;
+    return $stmt->closeCursor();
   }
 
   public static function get_config( $setting )
@@ -551,42 +623,42 @@ class SqlShim
     // TODO: get_config()
   }
 
-  public static function get_field( $stmt, $fieldIndex=0, $getAsType=null )
+  public static function get_field( \PDOStatement $stmt, $fieldIndex=0, $getAsType=null )
   {
     // TODO: get_field() - figure out what to do with $getAsType...
     // https://msdn.microsoft.com/en-us/library/cc296193.aspx
     return $stmt->fetchColumn($fieldIndex);
   }
 
-  public static function has_rows( $stmt )
+  public static function has_rows( \PDOStatement $stmt )
   {
-    // TODO: has_rows()
+    return (bool)$stmt->rowCount();
   }
 
-  public static function next_result( $stmt )
+  public static function next_result( \PDOStatement $stmt )
   {
     return $sstmt->nextRowset();
   }
 
-  public static function num_fields( $stmt )
+  public static function num_fields( \PDOStatement $stmt )
   {
     return $stmt->columnCount();
   }
 
-  public static function num_rows( $stmt )
+  public static function num_rows( \PDOStatement $stmt )
   {
-    return $stmt->rowCount();
-    // IDEA: get the count before, set it somewhere static and grab...
     // REVIEW: test this.
-    $row = $stmt->fetch(\PDO::FETCH_NUM);
-    if ( is_array($row) && count($row) )
-    {
-      return $row[key($row)];
-    }
-    return false;
+    return $stmt->rowCount();
+    // "SELECT @@ROWCOUNT;"
+    // $row = $stmt->fetch(\PDO::FETCH_NUM);
+    // if ( is_array($row) && count($row) )
+    // {
+    //   return $row[key($row)];
+    // }
+    // return false;
   }
 
-  public static function prepare( $conn, $sql, $params=[], $options=[] )
+  public static function prepare( \PDO $conn, $sql, $params=[], $options=[] )
   {
     // REVIEW: is the ?-to-:tag conversion necessary?
     $i = 1;
@@ -597,59 +669,76 @@ class SqlShim
       $count++;
     } while ( $found );
 
+    // translate options array
+
     try {
       $stmt = $conn->prepare($sql);
       $i = 1;
       foreach ( array_slice($params, 0, $count) as $var )
       {
         if ( $i>$count ) break;
-        $stmt->bindValue(":var$i", $var);
+        // $type = \PDO::PARAM_STR;
+        // if ( is_null($var) )
+        // {
+          // echo "WEE DOO";exit;
+          // $type = \PDO::PARAM_NULL;
+          // $var = "NULL";
+        // }
+
+        $bound = $stmt->bindValue(":var$i", $var);
+
+        if ( !$bound ) { echo "fail $i:$var<br>"; }
         $i++;
       }
       return $stmt;
     }
-    catch ( PDOException $e )
+    catch ( \PDOException $e )
     {
-      self::err($e);
+      self::log_err($e->errorInfo);
       return false;
     }
   }
 
-  public static function query( $conn, $sql, $params=[], $options=[] )
+  public static function query( \PDO $conn, $sql, $params=[], $options=[] )
   {
     $stmt = self::prepare($conn, $sql, $params, $options);
 
     try {
       if ( $stmt->execute() )
+      {
         return $stmt;
+      }
       else {
-        self::err($stmt);
+        self::log_err($stmt->errorInfo());
+        return $stmt;
       }
     }
     catch ( Exception $e )
     {
-      self::err($stmt);
+      self::log_err($e->errorInfo);
     }
     return false;
   }
 
-  public static function rollback( $conn )
+  public static function rollback( \PDO $conn )
   {
     return $conn->rollBack();
   }
 
-  public static function rows_affected( $stmt )
+  public static function rows_affected( \PDOStatement $stmt )
   {
     return $stmt->rowCount();
   }
 
-  public static function send_stream_data( $stmt )
+  public static function send_stream_data( \PDOStatement $stmt )
   {
     // TODO: send_stream_data() - what is this?
   }
 
-  public static function server_info( $conn )
+  public static function server_info( \PDO $conn )
   {
+    // \PDO::ATTR_SERVER_VERSION (integer)
+    // \PDO::ATTR_SERVER_INFO (integer)
     $stmt = self::query(
       $conn,
       "SELECT
