@@ -27,6 +27,7 @@ class SqlShim
   const MAGIC_NUM_NCHAR = 2139095544;
   const MAGIC_NUM_NVARCHAR = 2139095543;
   const MAGIC_NUM_NUMERIC = 2;
+  const MAGIC_NUM_IDK = 2139095040;
   const MAGIC_NUM_STREAM = 6;
   const MAGIC_NUM_STRING = 8389636;
   const MAGIC_NUM_VARBINARY = 2139095549;
@@ -353,13 +354,23 @@ class SqlShim
 
   public static function SQLTYPE_DECIMAL( $precision, $scale )
   {
-    $pc = intval($precision);
-    $r = self::MAGIC_NUM_ZERO;
-    if ( $pc>=0 && $pc<=38 )
+    $p = intval($precision);
+    $s = intval($scale);
+    $z = self::MAGIC_NUM_ZERO;
+    $c = $s*8389120;
+
+    if ( $p>38 || $p<-38 ) return 2147483139;
+
+    if ( $p<$s )
     {
-      $r = $pc*512;
-    };
-    return $r+self::MAGIC_NUM_DECIMAL;
+      $s = 0;
+      $c = self::MAGIC_NUM_IDK;
+    }
+
+    $z = ($p-$s)*512;
+
+    // return $c." + ".$z." + ".self::MAGIC_NUM_DECIMAL;
+    return $c+$z+self::MAGIC_NUM_DECIMAL;
   }
 
   public static function SQLTYPE_NCHAR( $charCount )
@@ -381,11 +392,12 @@ class SqlShim
   {
     $pc = intval($precision);
     $r = self::MAGIC_NUM_ZERO;
+    $s = self::MAGIC_NUM_SCALE;
     if ( $pc>=0 && $pc<=38 )
     {
       $r = $pc*512;
     };
-    return $r+self::MAGIC_NUM_NUMERIC;
+    return $r+self::MAGIC_NUM_NUMERIC+$s;
   }
 
   public static function SQLTYPE_NVARCHAR( $charCount )
@@ -551,20 +563,20 @@ class SqlShim
   public static function fetch_object( \PDOStatement $stmt, $className='stdClass', $ctorParams=[], $row=self::SCROLL_NEXT, $offset=0 )
   {
     try {
-      $object = $stmt->fetch(
-        \PDO::FETCH_ASSOC,
-        self::$tabscroll[$row],
-        $offset
-      );
-      // $object = $stmt->fetchObject(
-      //   $className,
-      //   $ctorParams
+      // $object = $stmt->fetch(
+      //   \PDO::FETCH_ASSOC,
+      //   self::$tabscroll[$row],
+      //   $offset
       // );
+      $object = $stmt->fetchObject(
+        $className,
+        $ctorParams
+      );
       // testing block
-      if ( is_array($object) )
-      {
-        $object = (object)$object;
-      }
+      // if ( is_array($object) )
+      // {
+      //   $object = (object)$object;
+      // }
       if ( is_object($object) )
       {
         return self::typify($object);
