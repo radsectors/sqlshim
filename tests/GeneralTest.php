@@ -43,49 +43,66 @@ class GeneralTest extends PHPUnit_Framework_TestCase
    */
   public function testConstants( $init )
   {
-    // $constants = get_defined_constants(true)['sqlsrv'];
-    //
-    // foreach ( $constants as $const=>$v )
-    // {
-    //   if ( strpos($const, 'SQLSRV_')===0 )
-    //   {
-    //     $cval = constant(SqlShim::NAME . "::" . str_replace('SQLSRV_', '', $const));
-    //     $val = constant($const);
-    //     $compare = ($val===$cval);
-    //     echo !$compare ? "$const: c$cval vs g$val" : "";
-    //     $this->assertTrue($compare);
-    //   }
-    // }
+    // test PHPTYPE constants
+    $constants = get_defined_constants(true)['sqlsrv'];
+    foreach ( $constants as $const=>$v )
+    {
+      if ( strpos($const, 'SQLSRV_')===0 )
+      {
+        $cval = constant(SqlShim::NAME . "::" . str_replace('SQLSRV_', '', $const));
+        $val = constant($const);
+        $compare = ($val===$cval);
+        echo !$compare ? "$const: c$cval vs g$val" : "";
+        $this->assertTrue($compare);
+      }
+    }
+
+    // test PHPTYPE functions
     $functions = [
-    //   'PHPTYPE_STREAM' => [0, 'char', 'binary'],
-    //   'PHPTYPE_STRING' => [0, 1, 8000],
-    //   'SQLTYPE_BINARY' => [0, 1, 8000],
-    //   'SQLTYPE_CHAR' => [0, 1, 8000],
-      'SQLTYPE_DECIMAL',
-    //   'SQLTYPE_NCHAR' => [0, 1, 4000],
-      // 'SQLTYPE_NUMERIC',
-    //   'SQLTYPE_NVARCHAR' => [0, 1, 4000],
-    //   'SQLTYPE_VARBINARY' => [0, 1, 8000],
-    //   'SQLTYPE_VARCHAR' => [0, 1, 8000],
+      'PHPTYPE_STREAM' => ['bird', '', 0, 1, 2, true, false, 'char', 'binary'],
+      'PHPTYPE_STRING' => ['bird', '', 0, 1, 2, true, false, 'char', 'binary'],
+      'SQLTYPE_BINARY' => [-8001, -8000, -1, 0, 1, 8000, 8001],
+      'SQLTYPE_CHAR' => [-8001, -8000, -1, 0, 1, 8000, 8001],
+      'SQLTYPE_DECIMAL' => [[-258, 258], [-258, 258]],
+      'SQLTYPE_NCHAR' => [-8001, -8000, -1, 0, 1, 8000, 8001],
+      'SQLTYPE_NUMERIC' => [[-258, 258], [-258, 258]],
+      'SQLTYPE_NVARCHAR' => [-8001, -8000, -1, 0, 1, 8000, 8001],
+      'SQLTYPE_VARBINARY' => [-8001, -8000, -1, 0, 1, 8000, 8001],
+      'SQLTYPE_VARCHAR' => [-8001, -8000, -1, 0, 1, 8000, 8001],
     ];
     // $functions = get_extension_funcs('sqlsrv');
-    foreach ( $functions as $func )
+    foreach ( $functions as $func=>$args )
     {
-      for( $p2=-10; $p2<10; $p2++ )
+      if ( strstr($func, 'DECIMAL') || strstr($func, 'NUMERIC') )
       {
-        for( $p1=-10; $p1<38; $p1++ )
+        for( $p1=$args[0][0]; $p1<=$args[0][1]; $p1++ ) {
+        for( $p2=$args[1][0]; $p2<=$args[1][1]; $p2++ ) {
+          self::tryfunction($func, [$p1, $p2]);
+        }}
+      }
+      else // if ( strstr($func, 'STREAM') || strstr($func, 'STRING') )
+      {
+        foreach ( $args as $arg )
         {
-          $cval = call_user_func(\RadSectors\SqlShim::NAME . "::$func", $p1, $p2);
-          $gval = call_user_func("SQLSRV_$func", $p1, $p2);
-          $compare = ($gval===$cval);
-          if ( !$compare )
-          {
-            echo "$func($p2, $p1): global:$gval vs class:$cval\n";
-          }
-          // $this->assertTrue($compare);
+          self::tryfunction($func, [$arg]);
         }
       }
     }
+  }
+
+  private function tryfunction( $func, $args )
+  {
+    $compare = null;
+    $cval = call_user_func_array(\RadSectors\SqlShim::NAME . "::$func", $args);
+    $gval = call_user_func_array("SQLSRV_$func", $args);
+    $compare = ($gval===$cval);
+    if ( !$compare )
+    {
+      // var_dump([$gval,$cval]);
+      echo "$func(" . implode(',', $args) . "): srv: $gval /shim: $cval\n";
+    }
+    $this->assertTrue($compare);
+    // return $compare;
   }
 
   /**
@@ -93,7 +110,6 @@ class GeneralTest extends PHPUnit_Framework_TestCase
    */
   public function testConnection( $init )
   {
-    return;
     if ( !$init ) return false;
 
     $con = sqlsrv_connect(
@@ -149,7 +165,6 @@ class GeneralTest extends PHPUnit_Framework_TestCase
    */
   public function testQueries( $con )
   {
-    return;
     if ( $con!==false )
     {
       $stmt = sqlsrv_query($con, "SELECT * FROM Northwind.Customers;");
@@ -158,10 +173,9 @@ class GeneralTest extends PHPUnit_Framework_TestCase
       {
         $rows[] = $row;
       }
-      var_dump($rows);
       $this->assertCount(91, $rows);
 
-      var_dump(sqlsrv_field_metadata($stmt));
+      // var_dump(sqlsrv_field_metadata($stmt));
 
       $stmt = sqlsrv_query($con, "SELECT * FROM Northwind.Customers WHERE Country IN (?, ?, ?);", ['UK', 'Sweden', 'Mexico']);
       $rows = [];
@@ -177,21 +191,24 @@ class GeneralTest extends PHPUnit_Framework_TestCase
   /**
    * @depends testConnection
    */
-  // public function testStoredProcedure( $con )
-  // {
-  //   if ( $con!==false )
-  //   {
-  //     $stmt = sqlsrv_query($con, "{ CALL SalesByCategory( ?, ? ) }", ["Meat/Poultry", null]);
-  //     $rows = [];
-  //     while ( $row = sqlsrv_fetch_array($stmt) )
-  //     {
-  //       $rows[] = $row;
-  //     }
-  //     var_dump($rows);
-  //
-  //   }
-  //   return false;
-  // }
+  public function testStoredProcedure( $con )
+  {
+    if ( $con!==false )
+    {
+      $stmt = sqlsrv_query($con, "{ CALL SalesByCategory( ?, ? ) }", ["Meat/Poultry", null]);
+      $rows = [];
+      if ( $stmt )
+      {
+        while ( $row = sqlsrv_fetch_array($stmt) )
+        {
+          $rows[] = $row;
+        }
+      }
+      // var_dump($rows);
+
+    }
+    return false;
+  }
 
 
   /**
@@ -199,7 +216,6 @@ class GeneralTest extends PHPUnit_Framework_TestCase
    */
   public function testTransactions( $con )
   {
-    return;
     if ( $con!==false )
     {
       $stmt = sqlsrv_begin_transaction($con);
@@ -217,7 +233,6 @@ class GeneralTest extends PHPUnit_Framework_TestCase
    */
   public function testDataTypes( $con )
   {
-    return;
     if ( $con!==false )
     {
 

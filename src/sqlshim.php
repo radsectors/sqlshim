@@ -27,13 +27,23 @@ class SqlShim
   const MAGIC_NUM_NCHAR = 2139095544;
   const MAGIC_NUM_NVARCHAR = 2139095543;
   const MAGIC_NUM_NUMERIC = 2;
-  const MAGIC_NUM_IDK = 2139095040;
+  const MAGIC_NUM_NOSCALE = 2139095040;
+  const MAGIC_NUM_SCALE = 8389120;
   const MAGIC_NUM_STREAM = 6;
   const MAGIC_NUM_STRING = 8389636;
   const MAGIC_NUM_VARBINARY = 2139095549;
   const MAGIC_NUM_VARCHAR = 2139095052;
-
   const MAGIC_NUM_ZERO = 8387584;
+
+  const INVALID_PRECISION = -1;
+  const INVALID_SCALE = -1;
+  const SIZE_MAX_TYPE = -1;
+
+  // constants for maximums in SQL Server
+  const MAX_FIELD_SIZE = 8000;
+  const MAX_PRECISION = 38;
+  const DEFAULT_PRECISION = 18;
+  const DEFAULT_SCALE = 0;
 
 
   /**
@@ -153,6 +163,83 @@ class SqlShim
     }
     self::log_err(["???","?","Unknown error"]);
     return;
+  }
+
+  private static function calc_size( $c, $max=self::MAX_FIELD_SIZE )
+  {
+    $c = intval($c);
+    $r = self::MAGIC_NUM_ZERO;
+    if ( $c==-1 )
+    {
+      $r += 512;
+    }
+    elseif ( $c>0 && $c<=$max )
+    {
+      $r = $c*512;
+    }
+    return $r;
+  }
+
+  private static function calc_size_str( $en, $r )
+  {
+    $en = strval($en);
+    if ( $en=='binary' )
+    {
+      $r += 1;
+    }
+    elseif ( $en=='char' )
+    {
+      $r += 1.5;
+    }
+    return intval($r*512);
+  }
+
+  private static function calc_prec_scale( $prec, $scale )
+  {
+    $p = is_numeric($prec) ?
+      intval($prec)
+      : self::INVALID_PRECISION
+    ;
+    $s = is_numeric($scale) ?
+      intval($scale)
+      : self::INVALID_SCALE
+    ;
+    if ( $s==-257 ) $s = self::INVALID_SCALE;
+    if ( $s<-256 ) $s = $s%256;
+
+    if ( ($s==self::INVALID_PRECISION && ($p<0 || $p>self::MAX_PRECISION)) ) {
+      $c = 0;
+      $b = $s;
+    }
+    else
+    {
+      $c = $s*self::MAGIC_NUM_SCALE;
+      $b = $p-$s;
+
+      if ( $p>self::MAX_PRECISION )
+      {
+        $p = self::INVALID_PRECISION;
+      }
+      if ( $p<0 )
+      {
+        $p = self::INVALID_PRECISION;
+        $c = ($s+1)*self::MAGIC_NUM_SCALE;
+        $b = -$s-2;
+      }
+      if ( $s>$p )
+      {
+        $s = self::INVALID_SCALE;
+        $c = self::MAGIC_NUM_NOSCALE;
+        $b = $p;
+      }
+
+      if ( $p==self::INVALID_PRECISION && $s==self::INVALID_SCALE )
+      {
+        $c = self::MAGIC_NUM_SCALE+self::MAGIC_NUM_NOSCALE;
+        $b = -2;
+      }
+    }
+    return intval($c+($b*512));
   }
 
   /**
@@ -294,155 +381,52 @@ class SqlShim
 
   public static function PHPTYPE_STREAM( $encoding )
 	{
-    $en = strval($encoding);
-    $r = 0;
-    if ( $en=='binary' )
-    {
-      $r = 1; //518;
-    }
-    elseif ( $en=='char' )
-    {
-      $r = 1.5; //774;
-    }
-    return $r*512+self::MAGIC_NUM_STREAM;
+    return self::calc_size_str($encoding, 65536)+self::MAGIC_NUM_STREAM;
   }
 
   public static function PHPTYPE_STRING( $encoding )
 	{
-    $en = strval($encoding);
-    // $r = null;
-    if ( $en=='binary' )
-    {
-      $r = 1;
-    }
-    elseif ( $en=='char' )
-    {
-      $r = 1.5;
-    }
-    return (49150+$r)*512+self::MAGIC_NUM_STRING;
+    return self::calc_size_str($encoding, 49150)+self::MAGIC_NUM_STRING;
   }
 
   public static function SQLTYPE_BINARY( $byteCount )
 	{
-    $bc = intval($byteCount);
-    $r = self::MAGIC_NUM_ZERO;
-    if ( $bc==-1 )
-    {
-      $r += 512;
-    }
-    elseif ( $bc>=1 && $bc<=8000 )
-    {
-      $r = $bc*512;
-    }
-    return $r+self::MAGIC_NUM_BINARY;
+    return self::calc_size($byteCount)+self::MAGIC_NUM_BINARY;
   }
 
   public static function SQLTYPE_CHAR( $charCount )
 	{
-    $cc = intval($charCount);
-    $r = self::MAGIC_NUM_ZERO;
-    if ( $bc==-1 )
-    {
-      $r += 512;
-    }
-    elseif ( $cc>0 && $cc<=8000 )
-    {
-      $r = $cc*512;
-    }
-    return $r+self::MAGIC_NUM_CHAR;
+    return self::calc_size($charCount)+self::MAGIC_NUM_CHAR;
   }
 
   public static function SQLTYPE_DECIMAL( $precision, $scale )
   {
-    $p = intval($precision);
-    $s = intval($scale);
-    $z = self::MAGIC_NUM_ZERO;
-    $c = $s*8389120;
-
-    if ( $p>38 || $p<-38 ) return 2147483139;
-
-    if ( $p<$s )
-    {
-      $s = 0;
-      $c = self::MAGIC_NUM_IDK;
-    }
-
-    $z = ($p-$s)*512;
-
-    // return $c." + ".$z." + ".self::MAGIC_NUM_DECIMAL;
-    return $c+$z+self::MAGIC_NUM_DECIMAL;
+    return self::calc_prec_scale($precision, $scale)+self::MAGIC_NUM_DECIMAL;
   }
 
   public static function SQLTYPE_NCHAR( $charCount )
   {
-    $cc = intval($charCount);
-    $r = self::MAGIC_NUM_ZERO;
-    if ( $bc==-1 )
-    {
-      $r += 512;
-    }
-    elseif ( $cc>0 && $cc<=4000 )
-    {
-      $r = $cc*512;
-    }
-    return $r+self::MAGIC_NUM_NCHAR;
+    return self::calc_size($charCount, 4000)+self::MAGIC_NUM_NCHAR;
   }
 
   public static function SQLTYPE_NUMERIC( $precision, $scale )
   {
-    $pc = intval($precision);
-    $r = self::MAGIC_NUM_ZERO;
-    $s = self::MAGIC_NUM_SCALE;
-    if ( $pc>=0 && $pc<=38 )
-    {
-      $r = $pc*512;
-    };
-    return $r+self::MAGIC_NUM_NUMERIC+$s;
+    return self::calc_prec_scale($precision, $scale)+self::MAGIC_NUM_NUMERIC;
   }
 
   public static function SQLTYPE_NVARCHAR( $charCount )
 	{
-    $cc = intval($charCount);
-    $r = self::MAGIC_NUM_ZERO;
-    if ( $bc==-1 )
-    {
-      $r += 512;
-    }
-    elseif ( $cc>0 && $cc<=4000 )
-    {
-      $r = $cc*512;
-    }
-    return $r+self::MAGIC_NUM_NVARCHAR;
+    return self::calc_size($charCount, 4000)+self::MAGIC_NUM_NVARCHAR;
   }
 
   public static function SQLTYPE_VARBINARY( $byteCount )
 	{
-    $bc = intval($byteCount);
-    $r = self::MAGIC_NUM_ZERO;
-    if ( $bc==-1 )
-    {
-      $r += 512;
-    }
-    elseif ( $bc>0 && $bc<=8000 )
-    {
-      $r = $bc*512;
-    }
-    return $r+self::MAGIC_NUM_VARBINARY;
+    return self::calc_size($byteCount)+self::MAGIC_NUM_VARBINARY;
   }
 
   public static function SQLTYPE_VARCHAR( $charCount )
 	{
-    $cc = intval($charCount);
-    $r = self::MAGIC_NUM_ZERO;
-    if ( $bc==-1 )
-    {
-      $r += 512;
-    }
-    elseif ( $cc>0 && $cc<=8000 )
-    {
-      $r = $cc*512;
-    }
-    return $r+self::MAGIC_NUM_VARCHAR;
+    return self::calc_size($charCount)+self::MAGIC_NUM_VARCHAR;
   }
 
 
@@ -563,20 +547,19 @@ class SqlShim
   public static function fetch_object( \PDOStatement $stmt, $className='stdClass', $ctorParams=[], $row=self::SCROLL_NEXT, $offset=0 )
   {
     try {
-      // $object = $stmt->fetch(
-      //   \PDO::FETCH_ASSOC,
-      //   self::$tabscroll[$row],
-      //   $offset
-      // );
-      $object = $stmt->fetchObject(
-        $className,
-        $ctorParams
+      $object = $stmt->fetch(
+        \PDO::FETCH_ASSOC,
+        self::$tabscroll[$row],
+        $offset
       );
-      // testing block
-      // if ( is_array($object) )
-      // {
-      //   $object = (object)$object;
-      // }
+      // $object = $stmt->fetchObject(
+      //   $className,
+      //   $ctorParams
+      // );
+      if ( is_array($object) )
+      {
+        $object = (object)$object;
+      }
       if ( is_object($object) )
       {
         return self::typify($object);
