@@ -1,58 +1,60 @@
-# sqlshim
-Provides sqlsrv driver functions in PHP for Linux/OS X.
+# [sqlshim] - PHP sqlsrv for Linux/OS X
+
+The **sqlshim** project aims to replicate [Microsoft SQL Server Driver for PHP][sqlsrv] (**sqlsrv**) on Linux/OS X.
+
+**sqlshim** was conceived out of the need for **[sqlsrv]** (which is a Windows-only PHP extension) in an OS X development environment. It began as a short script that defined a small set of functions.
+
+**sqlshim** is in alpha stages. It is is provided as-is and without warranty. I am not responsible for any damage(s) incurred from its use.
 
 
-## Synopsis
-
-sqlshim started out as a small set of functions that mimicked the behavior of just a select few of the functions provided by the sqlsrv driver PHP extension.
-sqlshim does not **yet** fully replace or duplicate ALL sqlsrv driver functionality. All of the functions have been defined, but only the most commonly used (in my own professional experiences) have been fleshed out.
-Please remember that this software is in alpha stages and far from production-ready. It is provided as-is and without warranty. I am not responsible for any damages incurred from its use.
-
-
-## Code Example
-
-1. ```\RadSectors\Microshaft\SqlShim::init();```
+## Usage
+1. ```\RadSectors\SqlShim::init();```
 2. ```sqlsrv_connect( ... );```
 3. ???
 4. Profit!!
 
 
-## Motivation
+## API Reference
+The project's aim is to completely and accurately replicate the provisions of [Microsoft SQL Server Driver for PHP](https://github.com/Azure/msphpsql). The official documentation should be all that you need.
 
-sqlshim was born out of the need for [sqlsrv](http://php.net/manual/en/book.sqlsrv.php) compatibility in local non-Windows development environments.
+[Microsoft SQL Server Driver for PHP - PHP.net](http://php.net/manual/en/book.sqlsrv.php)
+
+[SQLSRV Functions - PHP.net](http://php.net/manual/en/ref.sqlsrv.php)
+
+[SQLSRV Driver API Reference - MSDN](https://msdn.microsoft.com/en-us/library/cc296152.aspx)
 
 
 ## Installation
-Note: most of the OS X instructions are theoretical as they have not been fully tested.
+### Manual
+1. Download the latest [release](https://github.com/radsectors/sqlshim/releases).
+2. Extract ```src/sqlshim.php``` and ```src/globals.php```.
+3. ```include 'src/sqlshim.php';```
 
-### Install FreeTDS
+### Composer
+**sqlshim** isn't on packagist yet, so please follow the manual instructions above.
 
-On Debian or Ubuntu:
-```apt-get install freetds-bin``` or ```freetds-common```
+### Connection Setup
+Note: OS X instructions are essentially theoretical as they have not been well-tested.
 
-On Mac OS X, using homebrew
-```brew install freetds``` or ```port install freetds```
+##### Install FreeTDS
+Aptitude: ```apt-get isntall freetds-common```<br>
+Yum:      ```yum install freetds```<br>
+Macports: ```port install freetds```<br>
+Homebrew: ```brew install freetds```<br>
 
+##### Install PDO for PHP
+Aptitude: ```apt-get install php5-sybase```<br>
+Yum:      ```yum install php-pdo```<br>
+Macports: ```port install php5*-?```<br>
+Homebrew: ```brew install php5-pdo-dblib```<br>
 
-### Install PDO Driver
+##### Install ODBC
+Aptitude: ```apt-get install unixodbc```<br>
+Yum:      ```yum install unixodbc```<br>
+Macports: ```port install unixodbc```<br>
+Homebrew: ```brew install unixodbc```<br>
 
-On Debian or Ubuntu:
-```apt-get install php5-sybase```
-
-On Mac OS X:
-```brew install php5-pdo-dblib``` or ```port install php5*-?```
-
-### Install ODBC
-
-On Debian or Ubuntu:
-```apt-get install unixodbc```
-
-On Mac OS X:
-```brew install unixodbc``` or ```port install unixodbc```
-
-
-### Configure ODBC
-
+##### Configure ODBC
 1. Locate ```libtdsodbc.so``` and ```libtdsS.so```. Note: I think these have different names in the homebrew packages.
 
 2. Copy the following into your odbcinst.ini (usually ```/etc/odbcinst.ini``` on Debian/Ubuntu and ```/usr/local/etc/odbcinst.ini``` on Mac OS X) file.
@@ -65,67 +67,23 @@ FreeTDS = Installed
 Driver = /path/to/libtdsodbc.so
 ```
 
-3. Then, set your ODBCINST environment variable to the location of your odbcinst.ini file.
-
-
-## API Reference
-
-[Microsoft SQL Server Driver for PHP](http://php.net/manual/en/book.sqlsrv.php)
-
-[SQLSRV Functions](http://php.net/manual/en/ref.sqlsrv.php)
-
-### Other reading
-
-http://www.freetds.org/userguide/
-
-http://lists.ibiblio.org/pipermail/freetds/2011q4/027555.html
-
-http://dunglas.fr/2014/01/connection-to-a-ms-sql-server-from-symfony-doctrine-on-mac-or-linux/
-
-http://www.acloudtree.com/how-to-install-freetds-and-unixodbc-on-osx-using-homebrew-for-use-with-ruby-php-and-perl/
-
-https://msdn.microsoft.com/en-us/library/ff628167.aspx
-
-http://forum.lazarus.freepascal.org/index.php?topic=24352.0
-
-- links from Michael
-
-http://www.unixodbc.org/doc/FreeTDS.html
-
-http://voyte.ch/getting-php-in-homebrew-to-access-mssql-via/
-
-http://lkrms.org/php-with-freetds-on-os-x-mavericks/
-
-http://lucasmanual.com/mywiki/unixODBC
-
-http://stackoverflow.com/a/19913147/723007
-
-http://www.cerebralmastication.com/2013/01/installing-debugging-odbc-on-mac-os-x/
-
-http://blog.mattwoodward.com/2012/08/creating-datasource-with-freetds-and.html
-
-https://gist.github.com/sixfeetover/565440
-
-https://gist.github.com/Bouke/10454272
-
-https://github.com/byllc/config/blob/master/.bash_profile
-
-http://lists.ibiblio.org/pipermail/freetds/2011q4/027495.html
-
-
 
 ## Tests
+1. Rename ```config-sample.php``` to ```config.php```.
+2. Install composer packages.
+3. Run ```vendor/bin/phpunit -c phpunit.xml```
 
-Rename ```config-sample.php``` to ```config.php```.
 
-```vendor/bin/phpunit -c phpunit.xml```
-
-
-## Contributors
+## Contributing
+See [CONTRIBUTING.md](https://github.com/radsectors/sqlshim/blob/master/CONTRIBUTING.mb) for instructions on how to contribute.
 
 You can hit me up on twitter [@radsectors](https://twitter.com/radsectors).
 
+## Known Issues
+Please visit the [project on GitHub](https://github.com/radsectors/sqlshim) to view [outstanding issues](https://github.com/radsectors/sqlshim/issues).
 
 ## License
+**sqlshim** is licensed under the MIT license. See the [LICENSE](https://github.com/radsectors/sqlshim/blob/master/LICENSE) file for details.
 
-MIT
+[sqlshim]: https://github.com/radsectors/sqlshim
+[sqlsrv]: https://github.com/Azure/msphpsql "Microsoft SQL Server Driver for PHP"

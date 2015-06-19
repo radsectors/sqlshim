@@ -1,14 +1,14 @@
 # How to contribute
 
-I've never sent or received pull requests, but that seems to be the typical way to handle contributions... so request away!
+### Code Contributions
+I've never sent or received pull requests, but that seems to be the way to go about it... so I'll suggest that route until I find something I like better.
 
-## Help Wanted
 
-#### SQLTYPE_(DECIMAL|NUMERIC)
-The logic in the SQLTYPE_(DECIMAL|NUMERIC) functions seems pretty messy to me. If any math whizzes can see any pattern(s) I've missed, or if any C++ gurus or sqlsrv experts out there can shed some light on how these numbers are calculated, please, PLEASE do. I've snooped around the code over on [Azure/msphpsql](https://github.com/Azure/msphpsql) but was only able to find just a small amount of useful information.
+### Use Cases
+sqlshim's biggest need right now is use cases (especially OS X). If you develop on a Mac and have unixODBC/FreeTDS/PHP set up (or if you don't, but are in need), then I need your help.
 
-#### PHPTYPE_STR(EAM|ING)
-Something very strange is happening with the PHPTYPE_STR(EAM|ING) functions. Randomly, they return different values. I've decided they are the "incorrect" values based on how often they are returned, which is far less often than the ones I've deemed as "correct." All I can say about this one is "Halp!"
+Looking for any information to put toward building solid setup instructions for unixODBC/FreeTDS/PHP on OS X.
 
-#### SQLTYPE_*
-I'm happy with the logic in the other SQLTYPE_* functions, but I welcome any improvements.
+
+### Help Wanted
+Please see sqlshim's [help wanted](https://github.com/radsectors/sqlshim/labels/help%20wanted) issues.
