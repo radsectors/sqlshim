@@ -14,10 +14,10 @@ The **sqlshim** project aims to replicate [Microsoft SQL Server Driver for PHP][
 4. Profit!!
 
 
-## API Reference
-The project's aim is to completely and accurately replicate the provisions of [Microsoft SQL Server Driver for PHP](https://github.com/Azure/msphpsql). The official documentation should be all that you need.
+## Documentation
+The project's aim is to completely and accurately replicate the provisions of **sqlsrv**. Any official **sqlsrv** documentation will suffice.
 
-[Microsoft SQL Server Driver for PHP - PHP.net](http://php.net/manual/en/book.sqlsrv.php)
+[Microsoft SQL Server Driver - PHP.net](http://php.net/manual/en/book.sqlsrv.php)
 
 [SQLSRV Functions - PHP.net](http://php.net/manual/en/ref.sqlsrv.php)
 
@@ -34,41 +34,10 @@ The project's aim is to completely and accurately replicate the provisions of [M
 **sqlshim** isn't on packagist yet, so please follow the manual instructions above.
 
 ### Connection Setup
-Note: OS X instructions are essentially theoretical as they have not been well-tested.
-
-##### Install FreeTDS
-Aptitude: ```apt-get isntall freetds-common```<br>
-Yum:      ```yum install freetds```<br>
-Macports: ```port install freetds```<br>
-Homebrew: ```brew install freetds```<br>
-
-##### Install PDO for PHP
-Aptitude: ```apt-get install php5-sybase```<br>
-Yum:      ```yum install php-pdo```<br>
-Macports: ```port install php5*-?```<br>
-Homebrew: ```brew install php5-pdo-dblib```<br>
-
-##### Install ODBC
-Aptitude: ```apt-get install unixodbc```<br>
-Yum:      ```yum install unixodbc```<br>
-Macports: ```port install unixodbc```<br>
-Homebrew: ```brew install unixodbc```<br>
-
-##### Configure ODBC
-1. Locate ```libtdsodbc.so``` and ```libtdsS.so```. Note: I think these have different names in the homebrew packages.
-
-2. Copy the following into your odbcinst.ini (usually ```/etc/odbcinst.ini``` on Debian/Ubuntu and ```/usr/local/etc/odbcinst.ini``` on Mac OS X) file.
-
-```ini
-[ODBC Drivers]
-FreeTDS = Installed
-
-[FreeTDS]
-Driver = /path/to/libtdsodbc.so
-```
+Please see [Wiki Article](https://github.com/radsectors/sqlshim/wiki/Connection-Setup).
 
 
-## Tests
+## Testing
 1. Rename ```config-sample.php``` to ```config.php```.
 2. Install composer packages.
 3. Run ```vendor/bin/phpunit -c phpunit.xml```
