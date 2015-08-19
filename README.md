@@ -14,10 +14,10 @@ The **sqlshim** project aims to replicate [Microsoft SQL Server Driver for PHP][
 4. Profit!!
 
 
-## API Reference
-The project's aim is to completely and accurately replicate the provisions of [Microsoft SQL Server Driver for PHP](https://github.com/Azure/msphpsql). The official documentation should be all that you need.
+## Documentation
+The project's aim is to completely and accurately replicate the provisions of **sqlsrv**. Any official **sqlsrv** documentation will suffice.
 
-[Microsoft SQL Server Driver for PHP - PHP.net](http://php.net/manual/en/book.sqlsrv.php)
+[Microsoft SQL Server Driver - PHP.net](http://php.net/manual/en/book.sqlsrv.php)
 
 [SQLSRV Functions - PHP.net](http://php.net/manual/en/ref.sqlsrv.php)
 
@@ -68,7 +68,7 @@ Driver = /path/to/libtdsodbc.so
 ```
 
 
-## Tests
+## Testing
 1. Rename ```config-sample.php``` to ```config.php```.
 2. Install composer packages.
 3. Run ```vendor/bin/phpunit -c phpunit.xml```

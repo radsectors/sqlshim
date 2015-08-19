@@ -1,8 +1,8 @@
 {
   "name": "radsectors/sqlshim",
-  "description": "Replacement of sqlsrv driver functions for Linux/OS X.",
+  "description": "PHP sqlsrv functions for Linux/OS X",
   "keywords": ["sqlsrv", "linux", "osx", "microsoft", "azure"],
-  "homepage": "http://radsectors.com/microshaft-sqlshim",
+  "homepage": "https://github.com/radsectors/sqlshim",
   "license": "MIT",
   "authors": [
     {
