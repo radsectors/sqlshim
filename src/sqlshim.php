@@ -2,7 +2,7 @@
 namespace RadSectors;
 
 /**
- * Microsoft SQL Server Shim for PHP
+ * PHP sqlsrv functions for Linux/OS X
  *
  * @package sqlshim
  */
@@ -110,7 +110,7 @@ class SqlShim
     ];
 
     // for global function registration
-    // @REVIEW open to suggestions on a better way to do this.
+    // @REVIEW init() - open to suggestions on a better way to do this.
     $FUNCTION = self::NAME . "::" . __FUNCTION__;
     $registered = require( __DIR__ . '/globals.php');
 
@@ -284,6 +284,26 @@ class SqlShim
     return $val;
   }
 
+  // client info helper functions.
+  public static function client_info_driver_dllname()
+  {
+    $return = basename(end(explode(" ", exec("cat /etc/odbcinst.ini | grep Driver"))));
+    return $return;
+  }
+  public static function client_info_driver_odbcver()
+  {
+    return end(explode(" ", exec("isql --version")));
+  }
+  public static function client_info_driver_ver()
+  {
+    return end(explode(" ", exec("tsql -C | grep Version")));
+  }
+  public static function client_info_ext_ver()
+  {
+    return phpversion('pdo_odbc');
+    // return (new \ReflectionExtension('pdo_odbc'))->getVersion();
+  }
+
 
 
   /*
@@ -443,14 +463,15 @@ class SqlShim
   public static function client_info( \PDO $conn )
   {
     // \PDO::ATTR_CLIENT_VERSION (integer)
-    // REVIEW: these system() calls may actually be way too system-dependent.
-    // the first one is actually terrible and won't even work reliably.
-    return [
-      'DriverDLLName' => basename(array_pop(explode(" ", exec("cat /etc/odbcinst.ini | grep Driver")))),
-      'DriverODBCVer' => array_pop(explode(" ", exec("isql --version"))),
-      'DriverVer' => array_pop(explode(" ", exec("tsql -C | grep Version"))),
-      'ExtensionVer' => phpversion('pdo_odbc'), // (new \ReflectionExtension('pdo_odbc'))->getVersion(),
+    // REVIEW: client_info() - these system() calls may be too system-specific. or need some kind of prioritized alternatives.
+    // the first one won't even work reliably.
+    $return = [
+      'DriverDLLName' => self::client_info_driver_dllname(),
+      'DriverODBCVer' => self::client_info_driver_odbcver(),
+      'DriverVer'     => self::client_info_driver_ver(),
+      'ExtensionVer'  => self::client_info_ext_ver(),
     ];
+    return $return;
   }
 
   public static function close( \PDO $conn )
@@ -473,16 +494,16 @@ class SqlShim
 
   public static function connect( $serverName, $connectionInfo )
   {
-    // IDEA: research prefixes? do something with them?
+    // IDEA: connect() - research prefixes? do something with them?
     $serverName = str_replace('tcp:','',$serverName);
 
     // default port
-    list($serverName,$port) = explode(',', $serverName . ",1433", 2);
+    list($serverName,$port) = explode(',', $serverName . ",1433", 3);
 
     try {
       $conn = new \PDO(
         sprintf(
-          "odbc:driver=%s;tds_version=%s;server=%s;port=%s;database=%s;charset=%s;",
+          "odbc:driver=%s;tds_version=%s;server=%s;port=%s;database=%s;clientcharset=%s;",
           self::$options['driver'],
           self::$options['tds_version'],
           $serverName,
@@ -595,8 +616,8 @@ class SqlShim
 
   public static function field_metadata( \PDOStatement $stmt )
   {
-    // NOTE: PDOStatement->getColumnMeta() is an "EXPERIMENTAL" function. And its request not supported by driver.
-    // HACK: Implement our own? probably won't work (at first glance)
+    // NOTE: field_metadata() - PDOStatement->getColumnMeta() is an "EXPERIMENTAL" function. And its request not supported by driver.
+    // HACK: field_metadata() - Implement our own? probably won't work (at first glance)
     // check: http://community.sitepoint.com/t/pdo-getcolumnmeta-bug/3430/2
     // credit: http://vancelucas.com/
     return false;
@@ -642,7 +663,7 @@ class SqlShim
 
   public static function num_rows( \PDOStatement $stmt )
   {
-    // REVIEW: test this.
+    // REVIEW: num_rows() - test this.
     return $stmt->rowCount();
     // "SELECT @@ROWCOUNT;"
     // $row = $stmt->fetch(\PDO::FETCH_NUM);
@@ -655,7 +676,7 @@ class SqlShim
 
   public static function prepare( \PDO $conn, $sql, $params=[], $options=[] )
   {
-    // REVIEW: is the ?-to-:tag conversion necessary?
+    // REVIEW: prepare() - is the ?-to-:tag conversion necessary? since ?s are apparently supported.
     $i = 1;
     $count = -1;
     do {

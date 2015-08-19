@@ -4,10 +4,10 @@ The **sqlshim** project aims to replicate [Microsoft SQL Server Driver for PHP][
 
 **sqlshim** was conceived out of the need for **[sqlsrv]** (which is a Windows-only PHP extension) in an OS X development environment. It began as a short script that defined a small set of functions.
 
-**sqlshim** is in alpha stages. It is is provided as-is and without warranty. I am not responsible for any damage(s) incurred from its use.
+**DISCLAIMER:** **sqlshim** is in alpha stages and is geared primarily toward use in a development environment. But even if it were a fully supported production library, it is most definitely provided as-is and without warranty. I will not be held responsible for any damage(s) incurred from its use.
 
 
-## Usage
+## Basic Usage
 1. ```\RadSectors\SqlShim::init();```
 2. ```sqlsrv_connect( ... );```
 3. ???
@@ -25,16 +25,24 @@ The project's aim is to completely and accurately replicate the provisions of **
 
 
 ## Installation
-### Manual
+
+#### Composer
+1. `composer require --dev "radsectors/sqlshim:>0"`
+2. Include autoloader.
+```php
+require 'vendor/autoload.php';
+```
+
+#### Manual
 1. Download the latest [release](https://github.com/radsectors/sqlshim/releases).
 2. Extract ```src/sqlshim.php``` and ```src/globals.php```.
-3. ```include 'src/sqlshim.php';```
+3. Include it.
+```php
+require 'src/sqlshim.php';
+```
 
-### Composer
-**sqlshim** isn't on packagist yet, so please follow the manual instructions above.
-
-### Connection Setup
-Please see [Wiki Article](https://github.com/radsectors/sqlshim/wiki/Connection-Setup).
+#### Connection Setup
+Please see [wiki article](https://github.com/radsectors/sqlshim/wiki/Connection-Setup).
 
 
 ## Testing
