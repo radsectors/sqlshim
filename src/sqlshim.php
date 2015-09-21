@@ -648,6 +648,7 @@ class SqlShim
 
   public static function has_rows( \PDOStatement $stmt )
   {
+    // REVEW: this doesn't work unless $stmt->rowCount() works
     return (bool)$stmt->rowCount();
   }
 
@@ -663,15 +664,22 @@ class SqlShim
 
   public static function num_rows( \PDOStatement $stmt )
   {
-    // REVIEW: num_rows() - test this.
-    return $stmt->rowCount();
-    // "SELECT @@ROWCOUNT;"
-    // $row = $stmt->fetch(\PDO::FETCH_NUM);
-    // if ( is_array($row) && count($row) )
-    // {
-    //   return $row[key($row)];
-    // }
-    // return false;
+    // REVIEW: num_rows() - $stmt->rowCount DOES NOT work for SELECTs in MSSQL PDO.
+    $conn = $stmt->conn;
+    $sql = $stmt->queryString;
+    if ( stripos($sql, "select")>=0 )
+    {
+      $sql = preg_replace("/SELECT .* FROM/", "SELECT COUNT(*) AS count FROM", $sql);
+
+      var_dump($sql);
+      $$cnt = $conn->query($sql);
+      $row = $cnt->fetch(\PDO::FETCH_NUM);
+      if ( is_array($row) && count($row) )
+      {
+        return $row[key($row)];
+      }
+    }
+    return false;
   }
 
   public static function prepare( \PDO $conn, $sql, $params=[], $options=[] )
@@ -686,26 +694,45 @@ class SqlShim
     } while ( $found );
 
     // translate options array
+    $optionsin = $options;
+    $options = [];
+    foreach ( $options as $opt=>$val )
+    {
+      switch ( $opt )
+      {
+        case 'QueryTimeout':
+          if ( is_numeric($val) )
+          {
+            $conn->setAttribute(\PDO::SQLSRV_ATTR_QUERY_TIMEOUT, intval($val));
+          }
+        break;
+        case 'SendStreamParamsAtExec':
+          // ???
+        break;
+        case 'Scrollable':
+          if ( isset(self::$tabcursor[$val]) )
+          {
+            $options[\PDO::ATTR_CURSOR] = self::$tabcursor[$val];
+          }
+        break;
+        default:
+        break;
+      }
+    }
+
+    if ( !is_array($params) ) $params = [];
 
     try {
-      $stmt = $conn->prepare($sql);
+      $stmt = $conn->prepare($sql, $options);
       $i = 1;
       foreach ( array_slice($params, 0, $count) as $var )
       {
         if ( $i>$count ) break;
-        // $type = \PDO::PARAM_STR;
-        // if ( is_null($var) )
-        // {
-          // echo "WEE DOO";exit;
-          // $type = \PDO::PARAM_NULL;
-          // $var = "NULL";
-        // }
-
         $bound = $stmt->bindValue(":var$i", $var);
-
-        if ( !$bound ) { echo "fail $i:$var<br>"; }
+        // if ( !$bound ) { echo "fail $i:$var<br>"; }
         $i++;
       }
+      $stmt->conn = $conn; // for ref
       return $stmt;
     }
     catch ( \PDOException $e )

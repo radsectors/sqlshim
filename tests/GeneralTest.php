@@ -52,7 +52,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
         $cval = constant(SqlShim::NAME . "::" . str_replace('SQLSRV_', '', $const));
         $val = constant($const);
         $compare = ($val===$cval);
-        echo !$compare ? "$const: c$cval vs g$val" : "";
+        echo !$compare ? "$const: c$cval vs g$val\n" : "";
         $this->assertTrue($compare);
       }
     }
@@ -77,14 +77,14 @@ class GeneralTest extends PHPUnit_Framework_TestCase
       {
         for( $p1=$args[0][0]; $p1<=$args[0][1]; $p1++ ) {
         for( $p2=$args[1][0]; $p2<=$args[1][1]; $p2++ ) {
-          self::tryfunction($func, [$p1, $p2]);
+          $this->tryfunction($func, [$p1, $p2]);
         }}
       }
       else // if ( strstr($func, 'STREAM') || strstr($func, 'STRING') )
       {
         foreach ( $args as $arg )
         {
-          self::tryfunction($func, [$arg]);
+          $this->tryfunction($func, [$arg]);
         }
       }
     }
@@ -167,8 +167,9 @@ class GeneralTest extends PHPUnit_Framework_TestCase
   {
     if ( $con!==false )
     {
-      $stmt = sqlsrv_query($con, "SELECT * FROM Northwind.Customers;");
+      $stmt = sqlsrv_query($con, "SELECT * FROM Northwind.Customers;", null, ['Scrollable'=>SQLSRV_CURSOR_KEYSET]);
       $rows = [];
+      var_dump(sqlsrv_num_rows($stmt));exit;
       while ( $row = sqlsrv_fetch_array($stmt) )
       {
         $rows[] = $row;
