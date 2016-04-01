@@ -3,11 +3,6 @@ namespace
 {
   use \RadSectors\SqlShim;
 
-  if ( !isset($FUNCTION) || ( isset($FUNCTION) && $FUNCTION!=SqlShim::NAME . "::init" ) )
-  {
-    die("Must be included by SqlShim::init().");
-  }
-
   if ( !extension_loaded('sqlsrv') )
   {
     define('SQLSRV_FETCH_NUMERIC', SqlShim::FETCH_NUMERIC);
@@ -40,32 +35,22 @@ namespace
 
     define('SQLSRV_PHPTYPE_INT', SqlShim::PHPTYPE_INT);
     define('SQLSRV_PHPTYPE_DATETIME', SqlShim::PHPTYPE_DATETIME);
-    define('SQLSRV_PHPTYPE_FLOAT', SqlShim::PHPTYPE_FLOAT); /*
-    define('SQLSRV_PHPTYPE_STREAM', SqlShim::PHPTYPE_STREAM);
-    define('SQLSRV_PHPTYPE_STRING', SqlShim::PHPTYPE_STRING); */
+    define('SQLSRV_PHPTYPE_FLOAT', SqlShim::PHPTYPE_FLOAT);
     define('SQLSRV_PHPTYPE_NULL', SqlShim::PHPTYPE_NULL);
 
     define('SQLSRV_ENC_BINARY', SqlShim::ENC_BINARY);
     define('SQLSRV_ENC_CHAR', SqlShim::ENC_CHAR);
 
-    define('SQLSRV_SQLTYPE_BIGINT', SqlShim::SQLTYPE_BIGINT); /*
-    const SQLSRV_SQLTYPE_BINARY = function()*/
-    define('SQLSRV_SQLTYPE_BIT', SqlShim::SQLTYPE_BIT); /*
-    define('SQLSRV_SQLTYPE_CHAR', SqlShim::SQLTYPE_CHAR); */
+    define('SQLSRV_SQLTYPE_BIGINT', SqlShim::SQLTYPE_BIGINT);
+    define('SQLSRV_SQLTYPE_BIT', SqlShim::SQLTYPE_BIT);
     define('SQLSRV_SQLTYPE_DATE', SqlShim::SQLTYPE_DATE);
     define('SQLSRV_SQLTYPE_DATETIME', SqlShim::SQLTYPE_DATETIME);
     define('SQLSRV_SQLTYPE_DATETIME2', SqlShim::SQLTYPE_DATETIME2);
-    define('SQLSRV_SQLTYPE_DATETIMEOFFSET', SqlShim::SQLTYPE_DATETIMEOFFSET); /*
-    define('SQLSRV_SQLTYPE_DECIMAL', SqlShim::SQLTYPE_DECIMAL); */
+    define('SQLSRV_SQLTYPE_DATETIMEOFFSET', SqlShim::SQLTYPE_DATETIMEOFFSET);
     define('SQLSRV_SQLTYPE_FLOAT', SqlShim::SQLTYPE_FLOAT);
     define('SQLSRV_SQLTYPE_IMAGE', SqlShim::SQLTYPE_IMAGE);
     define('SQLSRV_SQLTYPE_INT', SqlShim::SQLTYPE_INT);
-    define('SQLSRV_SQLTYPE_MONEY', SqlShim::SQLTYPE_MONEY);/*
-    define('SQLSRV_SQLTYPE_NCHAR', SqlShim::SQLTYPE_NCHAR);
-    define('SQLSRV_SQLTYPE_NUMERIC', SqlShim::SQLTYPE_NUMERIC);
-    define('SQLSRV_SQLTYPE_NCHAR', SqlShim::SQLTYPE_NCHAR);
-    define('SQLSRV_SQLTYPE_NUMERIC', SqlShim::SQLTYPE_NUMERIC);
-    define('SQLSRV_SQLTYPE_NVARCHAR', SqlShim::SQLTYPE_NVARCHAR); */
+    define('SQLSRV_SQLTYPE_MONEY', SqlShim::SQLTYPE_MONEY);
     define('SQLSRV_SQLTYPE_NTEXT', SqlShim::SQLTYPE_NTEXT);
     define('SQLSRV_SQLTYPE_REAL', SqlShim::SQLTYPE_REAL);
     define('SQLSRV_SQLTYPE_SMALLDATETIME', SqlShim::SQLTYPE_SMALLDATETIME);
@@ -76,9 +61,7 @@ namespace
     define('SQLSRV_SQLTYPE_TIMESTAMP', SqlShim::SQLTYPE_TIMESTAMP);
     define('SQLSRV_SQLTYPE_TINYINT', SqlShim::SQLTYPE_TINYINT);
     define('SQLSRV_SQLTYPE_UNIQUEIDENTIFIER', SqlShim::SQLTYPE_UNIQUEIDENTIFIER);
-    define('SQLSRV_SQLTYPE_UDT', SqlShim::SQLTYPE_UDT); /*
-    define('SQLSRV_SQLTYPE_VARBINARY', SqlShim::SQLTYPE_VARBINARY);
-    define('SQLSRV_SQLTYPE_VARCHAR', SqlShim::SQLTYPE_VARCHAR); */
+    define('SQLSRV_SQLTYPE_UDT', SqlShim::SQLTYPE_UDT);
     define('SQLSRV_SQLTYPE_XML', SqlShim::SQLTYPE_XML);
 
     define('SQLSRV_TXN_READ_UNCOMMITTED', SqlShim::TXN_READ_UNCOMMITTED);

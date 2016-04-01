@@ -110,8 +110,6 @@ class SqlShim
     ];
 
     // for global function registration
-    // @REVIEW init() - open to suggestions on a better way to do this.
-    $FUNCTION = self::NAME . "::" . __FUNCTION__;
     $registered = require( __DIR__ . '/globals.php');
 
     self::$_init = true;
@@ -312,7 +310,6 @@ class SqlShim
   const FETCH_NUMERIC = 1;
   const FETCH_ASSOC = 2;
   const FETCH_BOTH = 3;
-
   const ERR_ERRORS = 0;
   const ERR_WARNINGS = 1;
   const ERR_ALL = 2;
@@ -654,7 +651,7 @@ class SqlShim
 
   public static function next_result( \PDOStatement $stmt )
   {
-    return $sstmt->nextRowset();
+    return $stmt->nextRowset();
   }
 
   public static function num_fields( \PDOStatement $stmt )
@@ -746,8 +743,9 @@ class SqlShim
   {
     $stmt = self::prepare($conn, $sql, $params, $options);
 
-    try {
-      if ( $stmt->execute() )
+    try
+    {
+      if ( self::execute($stmt) )
       {
         return $stmt;
       }
@@ -756,7 +754,7 @@ class SqlShim
         return $stmt;
       }
     }
-    catch ( Exception $e )
+    catch ( \PDOException $e )
     {
       self::log_err($e->errorInfo);
     }

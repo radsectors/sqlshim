@@ -4,7 +4,8 @@ The **sqlshim** project aims to replicate [Microsoft SQL Server Driver for PHP][
 
 **sqlshim** was conceived out of the need for **[sqlsrv]** (which is a Windows-only PHP extension) in an OS X development environment. It began as a short script that defined a small set of functions.
 
-**DISCLAIMER:** **sqlshim** is in alpha stages and is geared primarily toward use in a development environment. But even if it were a fully supported production library, it is most definitely provided as-is and without warranty. I will not be held responsible for any damage(s) incurred from its use.
+**DISCLAIMER:** **sqlshim** is in alpha and is geared primarily toward use in a development environment. It is provided as-is and without warranty. I will not be held responsible for any damage(s) incurred from its use.
+
 
 
 ## Basic Usage
@@ -15,7 +16,7 @@ The **sqlshim** project aims to replicate [Microsoft SQL Server Driver for PHP][
 
 
 ## Documentation
-The project's aim is to completely and accurately replicate the provisions of **sqlsrv**. Any official **sqlsrv** documentation will suffice.
+The project's aim is to completely and accurately replicate the provisions of **sqlsrv**. Any official **sqlsrv** documentation should suffice.
 
 [Microsoft SQL Server Driver - PHP.net](http://php.net/manual/en/book.sqlsrv.php)
 
@@ -52,7 +53,7 @@ Please see [wiki article](https://github.com/radsectors/sqlshim/wiki/Connection-
 
 
 ## Contributing
-See [CONTRIBUTING.md](https://github.com/radsectors/sqlshim/blob/master/CONTRIBUTING.mb) for instructions on how to contribute.
+See [CONTRIBUTING.md](https://github.com/radsectors/sqlshim/blob/master/CONTRIBUTING.md) for instructions on how to contribute.
 
 You can hit me up on twitter [@radsectors](https://twitter.com/radsectors).
 
