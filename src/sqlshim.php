@@ -56,8 +56,8 @@ class SqlShim
   {
     // process options
     self::$options = [
-      'driver' => "FreeTDS",
-      'tds_version' => "7.2",
+      'driver' => "SqlShim",
+      'tds_version' => "7.4",
       'autotype_fields' => false,
       // 'odbcini' => "/etc/odbc.ini",
       // 'odbcinstini' => "/etc/odbcinst.ini",
