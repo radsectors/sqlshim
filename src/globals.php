@@ -1,10 +1,10 @@
 <?php
+
 namespace
 {
-  use \RadSectors\SqlShim;
+use RadSectors\SqlShim;
 
-  if ( !extension_loaded('sqlsrv') )
-  {
+if (!extension_loaded('sqlsrv')) {
     define('SQLSRV_FETCH_NUMERIC', SqlShim::FETCH_NUMERIC);
     define('SQLSRV_FETCH_ASSOC', SqlShim::FETCH_ASSOC);
     define('SQLSRV_FETCH_BOTH', SqlShim::FETCH_BOTH);
@@ -83,426 +83,465 @@ namespace
     define('SQLSRV_SCROLL_ABSOLUTE', SqlShim::SCROLL_ABSOLUTE);
     define('SQLSRV_SCROLL_RELATIVE', SqlShim::SCROLL_RELATIVE);
 
-
     /**
-     * SQLSRV_PHPTYPE_STREAM
+     * SQLSRV_PHPTYPE_STREAM.
      *
      * @param string $encoding
-     * @return integer
+     *
+     * @return int
      */
-    function SQLSRV_PHPTYPE_STREAM( $encoding )
+    function SQLSRV_PHPTYPE_STREAM($encoding)
     {
-      return SqlShim::PHPTYPE_STREAM($encoding);
+        return SqlShim::PHPTYPE_STREAM($encoding);
     }
 
     /**
-     * SQLSRV_PHPTYPE_STRING
+     * SQLSRV_PHPTYPE_STRING.
      *
      * @param string $encoding
-     * @return integer
-     */
-    function SQLSRV_PHPTYPE_STRING( $encoding )
-    {
-      return SqlShim::PHPTYPE_STRING($encoding);
-    }
-
-    /**
-     * SQLSRV_SQLTYPE_BINARY
      *
-     * @param integer $byteCount
-     * @return integer
+     * @return int
      */
-    function SQLSRV_SQLTYPE_BINARY( $byteCount )
+    function SQLSRV_PHPTYPE_STRING($encoding)
     {
-      return SqlShim::SQLTYPE_BINARY($byteCount);
+        return SqlShim::PHPTYPE_STRING($encoding);
     }
 
     /**
-     * SQLSRV_SQLTYPE_CHAR
+     * SQLSRV_SQLTYPE_BINARY.
      *
-     * @param integer $charCount
-     * @return integer
+     * @param int $byteCount
+     *
+     * @return int
      */
-    function SQLSRV_SQLTYPE_CHAR( $charCount )
+    function SQLSRV_SQLTYPE_BINARY($byteCount)
     {
-      return SqlShim::SQLTYPE_CHAR($charCount);
+        return SqlShim::SQLTYPE_BINARY($byteCount);
     }
 
     /**
-     * SQLSRV_SQLTYPE_DECIMAL
+     * SQLSRV_SQLTYPE_CHAR.
+     *
+     * @param int $charCount
+     *
+     * @return int
+     */
+    function SQLSRV_SQLTYPE_CHAR($charCount)
+    {
+        return SqlShim::SQLTYPE_CHAR($charCount);
+    }
+
+    /**
+     * SQLSRV_SQLTYPE_DECIMAL.
+     *
      * @todo figure out how $scale works into the equation.
-     * @param integer $precision Precision
-     * @param integer $scale Scale
-     * @return integer
-     */
-    function SQLSRV_SQLTYPE_DECIMAL( $precision, $scale )
-    {
-      return SqlShim::SQLTYPE_DECIMAL($precision, $scale);
-    }
-
-    /**
-     * SQLSRV_SQLTYPE_NCHAR
      *
-     * @param integer $charCount
-     * @return integer
+     * @param int $precision Precision
+     * @param int $scale     Scale
+     *
+     * @return int
      */
-    function SQLSRV_SQLTYPE_NCHAR( $charCount )
+    function SQLSRV_SQLTYPE_DECIMAL($precision, $scale)
     {
-      return SqlShim::SQLTYPE_NCHAR($charCount);
+        return SqlShim::SQLTYPE_DECIMAL($precision, $scale);
     }
 
     /**
-     * SQLSRV_SQLTYPE_NUMERIC
+     * SQLSRV_SQLTYPE_NCHAR.
+     *
+     * @param int $charCount
+     *
+     * @return int
+     */
+    function SQLSRV_SQLTYPE_NCHAR($charCount)
+    {
+        return SqlShim::SQLTYPE_NCHAR($charCount);
+    }
+
+    /**
+     * SQLSRV_SQLTYPE_NUMERIC.
+     *
      * @todo figure out how $scale works into the equation.
-     * @param integer $precision Precision
-     * @param integer $scale Scale
-     * @return integer
-     */
-    function SQLSRV_SQLTYPE_NUMERIC( $precision, $scale )
-    {
-      return SqlShim::SQLTYPE_NUMERIC($precision, $scale);
-    }
-
-    /**
-     * SQLSRV_SQLTYPE_NVARCHAR
      *
-     * @param integer $charCount
-     * @return integer
-     */
-    function SQLSRV_SQLTYPE_NVARCHAR( $charCount )
-    {
-      return SqlShim::SQLTYPE_NVARCHAR($charCount);
-    }
-
-    /**
-     * SQLSRV_SQLTYPE_VARBINARY
+     * @param int $precision Precision
+     * @param int $scale     Scale
      *
-     * @param integer $byteCount
-     * @return integer
+     * @return int
      */
-    function SQLSRV_SQLTYPE_VARBINARY( $byteCount )
+    function SQLSRV_SQLTYPE_NUMERIC($precision, $scale)
     {
-      return SqlShim::SQLTYPE_VARBINARY($byteCount);
+        return SqlShim::SQLTYPE_NUMERIC($precision, $scale);
     }
 
     /**
-     * SQLSRV_SQLTYPE_VARCHAR
+     * SQLSRV_SQLTYPE_NVARCHAR.
      *
-     * @param integer $charCount
-     * @return integer
+     * @param int $charCount
+     *
+     * @return int
      */
-    function SQLSRV_SQLTYPE_VARCHAR( $charCount )
+    function SQLSRV_SQLTYPE_NVARCHAR($charCount)
     {
-      return SqlShim::SQLTYPE_VARCHAR($charCount);
+        return SqlShim::SQLTYPE_NVARCHAR($charCount);
     }
 
     /**
-     * Begins a database transaction
+     * SQLSRV_SQLTYPE_VARBINARY.
+     *
+     * @param int $byteCount
+     *
+     * @return int
+     */
+    function SQLSRV_SQLTYPE_VARBINARY($byteCount)
+    {
+        return SqlShim::SQLTYPE_VARBINARY($byteCount);
+    }
+
+    /**
+     * SQLSRV_SQLTYPE_VARCHAR.
+     *
+     * @param int $charCount
+     *
+     * @return int
+     */
+    function SQLSRV_SQLTYPE_VARCHAR($charCount)
+    {
+        return SqlShim::SQLTYPE_VARCHAR($charCount);
+    }
+
+    /**
+     * Begins a database transaction.
      *
      * @param object $conn
-     * @return boolean
+     *
+     * @return bool
      */
-    function sqlsrv_begin_transaction( $conn )
+    function sqlsrv_begin_transaction($conn)
     {
-      return SqlShim::begin_transaction($conn);
+        return SqlShim::begin_transaction($conn);
     }
 
     /**
-     * Cancels a statement
+     * Cancels a statement.
      *
      * @param object $stmt
-     * @return boolean
+     *
+     * @return bool
      */
-    function sqlsrv_cancel( $stmt )
+    function sqlsrv_cancel($stmt)
     {
-      return SqlShim::cancel($stmt);
+        return SqlShim::cancel($stmt);
     }
 
     /**
-     * Returns information about the client and specified connection
+     * Returns information about the client and specified connection.
      *
      * @param object $conn
+     *
      * @return string[]
      */
-    function sqlsrv_client_info( $conn )
+    function sqlsrv_client_info($conn)
     {
-      return SqlShim::client_info($conn);
+        return SqlShim::client_info($conn);
     }
 
     /**
-     * Closes an open connection and releases resourses associated with the connection
+     * Closes an open connection and releases resourses associated with the connection.
      *
      * @param object $conn
-     * @return boolean
+     *
+     * @return bool
      */
-    function sqlsrv_close( $conn )
+    function sqlsrv_close($conn)
     {
-      return SqlShim::close($conn);
+        return SqlShim::close($conn);
     }
 
     /**
-     * Commits a transaction that was begun with sqlsrv_begin_transaction()
+     * Commits a transaction that was begun with sqlsrv_begin_transaction().
      *
      * @param object $conn
-     * @return boolean
+     *
+     * @return bool
      */
-    function sqlsrv_commit( $conn )
+    function sqlsrv_commit($conn)
     {
-      return SqlShim::commit($conn);
+        return SqlShim::commit($conn);
     }
 
     /**
-     * Changes the driver error handling and logging configurations
+     * Changes the driver error handling and logging configurations.
      *
      * @param string $setting
-     * @param mixed $value
-     * @return boolean
+     * @param mixed  $value
+     *
+     * @return bool
      */
-    function sqlsrv_configure( $setting, $value )
+    function sqlsrv_configure($setting, $value)
     {
-      return SqlShim::configure($setting, $value);
+        return SqlShim::configure($setting, $value);
     }
 
     /**
-     * Opens a connection to a Microsoft SQL Server database
+     * Opens a connection to a Microsoft SQL Server database.
      *
      * @param string $serverName
-     * @param array $connectionInfo
+     * @param array  $connectionInfo
+     *
      * @return \PDO
      */
-    function sqlsrv_connect( $serverName, $connectionInfo )
+    function sqlsrv_connect($serverName, $connectionInfo)
     {
-      return SqlShim::connect($serverName, $connectionInfo);
+        return SqlShim::connect($serverName, $connectionInfo);
     }
 
     /**
-     * Returns error and warning information about the last SQLSRV operation performed
+     * Returns error and warning information about the last SQLSRV operation performed.
      *
-     * @param integer $errorsOrWarnings
+     * @param int $errorsOrWarnings
+     *
      * @return array[]|null
      */
-    function sqlsrv_errors( $errorsOrWarnings=SQLSRV_ERR_ALL )
+    function sqlsrv_errors($errorsOrWarnings = SQLSRV_ERR_ALL)
     {
-      return SqlShim::errors($errorsOrWarnings);
+        return SqlShim::errors($errorsOrWarnings);
     }
 
     /**
-     * Executes a statement prepared with sqlsrv_prepare()
+     * Executes a statement prepared with sqlsrv_prepare().
      *
      * @param object $stmt
-     * @return boolean
+     *
+     * @return bool
      */
-    function sqlsrv_execute( $stmt )
+    function sqlsrv_execute($stmt)
     {
-      return SqlShim::execute($stmt);
+        return SqlShim::execute($stmt);
     }
 
     /**
-     * Returns a row as an array
+     * Returns a row as an array.
      *
      * @param \PDOStatement $stmt
-     * @param integer $fetchType
-     * @param integer $row
-     * @param integer $offset
+     * @param int           $fetchType
+     * @param int           $row
+     * @param int           $offset
+     *
      * @return array|null
      */
-    function sqlsrv_fetch_array( $stmt, $fetchType=SQLSRV_FETCH_BOTH, $row=SQLSRV_SCROLL_NEXT, $offset=0 )
+    function sqlsrv_fetch_array($stmt, $fetchType = SQLSRV_FETCH_BOTH, $row = SQLSRV_SCROLL_NEXT, $offset = 0)
     {
-      return SqlShim::fetch_array($stmt, $fetchType, $row, $offset);
+        return SqlShim::fetch_array($stmt, $fetchType, $row, $offset);
     }
 
     /**
-     * Retrieves the next row of data in a result set as an object
+     * Retrieves the next row of data in a result set as an object.
      *
      * @param \PDOStatement $stmt
-     * @param string $className
-     * @param array $ctorParams
-     * @param integer $row
-     * @param integer $offset
+     * @param string        $className
+     * @param array         $ctorParams
+     * @param int           $row
+     * @param int           $offset
+     *
      * @return object|null|false
      */
-    function sqlsrv_fetch_object( $stmt, $className='stdClass', $ctorParams=[], $row=SQLSRV_SCROLL_NEXT, $offset=0 )
+    function sqlsrv_fetch_object($stmt, $className = 'stdClass', $ctorParams = [], $row = SQLSRV_SCROLL_NEXT, $offset = 0)
     {
-      return SqlShim::fetch_object($stmt, $className, $ctorParams, $row, $offset);
+        return SqlShim::fetch_object($stmt, $className, $ctorParams, $row, $offset);
     }
 
     /**
-     * Makes the next row in a result set available for reading
+     * Makes the next row in a result set available for reading.
      *
      * @param \PDOStatement $stmt
-     * @param integer $row
-     * @param integer $offset
-     * @return boolean|null
+     * @param int           $row
+     * @param int           $offset
+     *
+     * @return bool|null
      */
-    function sqlsrv_fetch( $stmt, $row=SQLSRV_SCROLL_NEXT, $offset=0 )
+    function sqlsrv_fetch($stmt, $row = SQLSRV_SCROLL_NEXT, $offset = 0)
     {
-      return SqlShim::fetch($stmt, $row, $offset);
+        return SqlShim::fetch($stmt, $row, $offset);
     }
 
     /**
-     * Retrieves metadata for the fields of a statement prepared by sqlsrv_prepare() or sqlsrv_query()
+     * Retrieves metadata for the fields of a statement prepared by sqlsrv_prepare() or sqlsrv_query().
      *
      * Retrieves metadata for the fields of a statement prepared by sqlsrv_prepare() or sqlsrv_query(). sqlsrv_field_metadata() can be called on a statement before or after statement execution.
      *
      * @param \PDOStatement $stmt The statment resource for which metadata is returned.
+     *
      * @return array[]|false Returns an array of arrays on success. Otherwise, FALSE is returned.
      */
-    function sqlsrv_field_metadata( $stmt )
+    function sqlsrv_field_metadata($stmt)
     {
-      return SqlShim::field_metadata($stmt);
+        return SqlShim::field_metadata($stmt);
     }
 
     /**
-     * Frees all resources for the specified statement
+     * Frees all resources for the specified statement.
      *
      * @param \PDOStatement $stmt
-     * @return boolean
+     *
+     * @return bool
      */
-    function sqlsrv_free_stmt( $stmt )
+    function sqlsrv_free_stmt($stmt)
     {
-      return SqlShim::free_stmt($stmt);
+        return SqlShim::free_stmt($stmt);
     }
 
     /**
-     * Returns the value of the specified configuration setting
+     * Returns the value of the specified configuration setting.
      *
      * @param string $setting
+     *
      * @return mixed
      */
-    function sqlsrv_get_config( $setting )
+    function sqlsrv_get_config($setting)
     {
-      return SqlShim::get_config($setting);
+        return SqlShim::get_config($setting);
     }
 
     /**
-     * Gets field data from the currently selected row
+     * Gets field data from the currently selected row.
      *
      * @param \PDOStatement $stmt
-     * @param integer $fieldIndex
-     * @param integer $getAsType
+     * @param int           $fieldIndex
+     * @param int           $getAsType
+     *
      * @return mixed
      */
-    function sqlsrv_get_field( $stmt, $fieldIndex=0, $getAsType=null )
+    function sqlsrv_get_field($stmt, $fieldIndex = 0, $getAsType = null)
     {
-      return SqlShim::get_field($stmt, $fieldIndex=0, $getAsType);
+        return SqlShim::get_field($stmt, $fieldIndex = 0, $getAsType);
     }
 
     /**
-     * Indicates whether the specified statement has rows
+     * Indicates whether the specified statement has rows.
      *
      * @param \PDOStatement $stmt
-     * @return boolean
+     *
+     * @return bool
      */
-    function sqlsrv_has_rows( $stmt )
+    function sqlsrv_has_rows($stmt)
     {
-      return SqlShim::has_rows($stmt);
+        return SqlShim::has_rows($stmt);
     }
 
     /**
-     * Makes the next result of the specified statement active
+     * Makes the next result of the specified statement active.
      *
      * @param \PDOStatement $stmt
-     * @return boolean|null
+     *
+     * @return bool|null
      */
-    function sqlsrv_next_result( $stmt )
+    function sqlsrv_next_result($stmt)
     {
-      return SqlShim::next_result($stmt);
+        return SqlShim::next_result($stmt);
     }
 
     /**
-     * Retrieves the number of fields (columns) on a statement
+     * Retrieves the number of fields (columns) on a statement.
      *
      * @param \PDOStatement $stmt
-     * @return integer|false
+     *
+     * @return int|false
      */
-    function sqlsrv_num_fields( $stmt )
+    function sqlsrv_num_fields($stmt)
     {
-      return SqlShim::num_fields($stmt);
+        return SqlShim::num_fields($stmt);
     }
 
     /**
-     * Retrieves the number of rows in a result set
+     * Retrieves the number of rows in a result set.
      *
      * @param \PDOStatement $stmt
-     * @return integer|false
+     *
+     * @return int|false
      */
-    function sqlsrv_num_rows( $stmt )
+    function sqlsrv_num_rows($stmt)
     {
-      return SqlShim::num_rows($stmt);
+        return SqlShim::num_rows($stmt);
     }
 
     /**
-     * Prepares a query for execution
+     * Prepares a query for execution.
      *
-     * @param \PDO $conn
+     * @param \PDO   $conn
      * @param string $sql
-     * @param array $params
-     * @param array $options
+     * @param array  $params
+     * @param array  $options
+     *
      * @return \PDOStatement|false
      */
-    function sqlsrv_prepare( $conn, $sql, $params=[], $options=[] )
+    function sqlsrv_prepare($conn, $sql, $params = [], $options = [])
     {
-      return SqlShim::prepare($conn, $sql, $params, $options);
+        return SqlShim::prepare($conn, $sql, $params, $options);
     }
 
     /**
      * Prepares and executes a query.
      *
-     * @param \PDO $conn
+     * @param \PDO   $conn
      * @param string $sql
-     * @param array $params
-     * @param array $options
+     * @param array  $params
+     * @param array  $options
+     *
      * @return \PDOStatement|false
      */
-    function sqlsrv_query( $conn, $sql, $params=[], $options=[] )
+    function sqlsrv_query($conn, $sql, $params = [], $options = [])
     {
-      return SqlShim::query($conn, $sql, $params, $options);
+        return SqlShim::query($conn, $sql, $params, $options);
     }
 
     /**
-     * Rolls back a transaction that was begun with sqlsrv_begin_transaction()
+     * Rolls back a transaction that was begun with sqlsrv_begin_transaction().
      *
      * @param \PDO $conn
-     * @return boolean
+     *
+     * @return bool
      */
-    function sqlsrv_rollback( $conn )
+    function sqlsrv_rollback($conn)
     {
-      return SqlShim::rollback($conn);
+        return SqlShim::rollback($conn);
     }
 
     /**
-     * Returns the number of rows modified by the last INSERT, UPDATE, or DELETE query executed
+     * Returns the number of rows modified by the last INSERT, UPDATE, or DELETE query executed.
      *
      * @param \PDOStatement $stmt
-     * @return integer|false
+     *
+     * @return int|false
      */
-    function sqlsrv_rows_affected( $stmt )
+    function sqlsrv_rows_affected($stmt)
     {
-      return SqlShim::rows_affected($stmt);
+        return SqlShim::rows_affected($stmt);
     }
 
     /**
-     * Sends data from parameter streams to the server
+     * Sends data from parameter streams to the server.
      *
      * @param \PDOStatement $stmt
-     * @return boolean
+     *
+     * @return bool
      */
-    function sqlsrv_send_stream_data( $stmt )
+    function sqlsrv_send_stream_data($stmt)
     {
-      return SqlShim::send_stream_data($stmt);
+        return SqlShim::send_stream_data($stmt);
     }
 
     /**
-     * Returns information about the server
+     * Returns information about the server.
      *
      * @param \PDO $conn
+     *
      * @return string[]
      */
-    function sqlsrv_server_info( $conn )
+    function sqlsrv_server_info($conn)
     {
-      return SqlShim::server_info($conn);
+        return SqlShim::server_info($conn);
     }
 
     return true;
-  }
+}
 }
