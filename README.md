@@ -15,16 +15,11 @@ The **sqlshim** project aims to replicate [Microsoft SQL Server Driver for PHP][
 
 
 ## Documentation
-The project's aim is to completely and accurately replicate the provisions of **sqlsrv**. Any official **sqlsrv** documentation should suffice.
-
-[Microsoft SQL Server Driver - PHP.net](http://php.net/manual/en/book.sqlsrv.php)
-
-[SQLSRV Functions - PHP.net](http://php.net/manual/en/ref.sqlsrv.php)
-
-[SQLSRV Driver API Reference - MSDN](https://msdn.microsoft.com/en-us/library/cc296152.aspx)
-
+For more detailed documentation on **sqlshim**, please see the [sqlshim wiki](https://github.com/radsectors/sqlshim/wiki)
 
 ## Installation
+
+See [wiki] for more detailed instructions.
 
 #### Composer
 1. `composer require "radsectors/sqlshim:dev-master"`
