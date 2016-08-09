@@ -248,13 +248,38 @@ class SqlShim
   private static function typify( $row )
   {
     $i = 0;
-    foreach ( $row as $col=>&$val )
-    {
-      $val = self::guesstype($val);
-      $i++;
+    foreach ($row as &$value) {
+        //DBLIB database driver returns everything as strings, so this converts num's back to the correct data type
+        $value = self::convertDataType($value);
     }
     return $row;
   }
+  
+  private static function convertDataType($string){
+  
+  //uncommenting would allow for separation of float and int's
+  
+  //if ( filter_var( $string, FILTER_VALIDATE_INT ) === false ) 
+  //{
+    if ( filter_var( $string, FILTER_VALIDATE_FLOAT ) === false ) 
+    {
+      return $string;
+    }
+    else 
+    {
+      //is a float
+      $string = (float)filter_var( $string, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION );
+    }
+//  }
+//  
+//  else 
+//  {
+//        //is an int
+//        $string = (int)filter_var( $string, FILTER_SANITIZE_NUMBER_INT);
+//  }
+//  
+  return $string;
+}
 
   /**
    * guesstype
@@ -367,6 +392,8 @@ class SqlShim
   const SQLTYPE_SMALLDATETIME = 8285;
   const SQLTYPE_SMALLINT = 5;
   const SQLTYPE_SMALLMONEY = 33559555;
+
+  //-1 means unlimited
   const SQLTYPE_TEXT = -1;
   const SQLTYPE_TIME = 58728806;
   const SQLTYPE_TIMESTAMP = 4606;
@@ -397,22 +424,22 @@ class SqlShim
   const SCROLL_RELATIVE = 6;
 
   public static function PHPTYPE_STREAM( $encoding )
-	{
+  {
     return self::calc_size_str($encoding, 65536)+self::MAGIC_NUM_STREAM;
   }
 
   public static function PHPTYPE_STRING( $encoding )
-	{
+  {
     return self::calc_size_str($encoding, 49150)+self::MAGIC_NUM_STRING;
   }
 
   public static function SQLTYPE_BINARY( $byteCount )
-	{
+  {
     return self::calc_size($byteCount)+self::MAGIC_NUM_BINARY;
   }
 
   public static function SQLTYPE_CHAR( $charCount )
-	{
+  {
     return self::calc_size($charCount)+self::MAGIC_NUM_CHAR;
   }
 
@@ -432,17 +459,17 @@ class SqlShim
   }
 
   public static function SQLTYPE_NVARCHAR( $charCount )
-	{
+  {
     return self::calc_size($charCount, 4000)+self::MAGIC_NUM_NVARCHAR;
   }
 
   public static function SQLTYPE_VARBINARY( $byteCount )
-	{
+  {
     return self::calc_size($byteCount)+self::MAGIC_NUM_VARBINARY;
   }
 
   public static function SQLTYPE_VARCHAR( $charCount )
-	{
+  {
     return self::calc_size($charCount)+self::MAGIC_NUM_VARCHAR;
   }
 
@@ -497,33 +524,65 @@ class SqlShim
     // default port
     list($serverName,$port) = explode(',', $serverName . ",1433", 3);
 
-    try {
-      $conn = new \PDO(
-        sprintf(
-          "odbc:driver=%s;tds_version=%s;server=%s;port=%s;database=%s;clientcharset=%s;",
-          self::$options['driver'],
-          self::$options['tds_version'],
-          $serverName,
-          $port,
-          $connectionInfo['Database'],
-          $connectionInfo['CharacterSet']
-        ),
-        $connectionInfo['UID'],
-        $connectionInfo['PWD']
-      );
-      $conn->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-      $conn->setAttribute(\PDO::ATTR_EMULATE_PREPARES, true);
-      $conn->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_NATURAL);
-      $conn->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
-      $conn->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
-      $conn->prepare('SET ANSI_WARNINGS ON')->execute();
-      $conn->prepare('SET ANSI_NULLS ON')->execute();
+    //*******Old Methos of connecting, had some glitches. To use this ODBC ini must be configured manually.
+
+    // try {
+    //   $conn = new \PDO(
+    //     sprintf(
+    //       "odbc:driver=%s;tds_version=%s;server=%s;port=%s;database=%s;clientcharset=%s;",
+    //       self::$options['driver'],
+    //       self::$options['tds_version'],
+    //       $serverName,
+    //       $port,
+    //       $connectionInfo['Database'],
+    //       $connectionInfo['CharacterSet']
+    //     ),
+    //     $connectionInfo['UID'],
+    //     $connectionInfo['PWD']
+    //   );
+    //   if ($connection === false) {
+    //     echo "<br>Did not connect through odbc";
+    //     exit;}
+    //   $conn->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+    //   $conn->setAttribute(\PDO::ATTR_EMULATE_PREPARES, true);
+    //   $conn->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_NATURAL);
+    //   $conn->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
+    //   $conn->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
+    //   $conn->prepare('SET ANSI_WARNINGS ON')->execute();
+    //   $conn->prepare('SET ANSI_NULLS ON')->execute();
+    // }
+    // catch ( \PDOException $e )
+    // {
+    //   self::log_err($e);
+    //   return false;
+    // }
+
+    //This is our custom PDO, using it works with text strings whereas the other does not.
+    $dbname = $connectionInfo['Database'];
+    $username = $connectionInfo['UID'];
+    $pw = $connectionInfo['PWD'];
+
+    try{
+      $conn = new \PDO ("dblib:version=7.2;charset=UTF-8;host={$serverName};dbname={$dbname}","{$username}","{$pw}");
     }
+    
     catch ( \PDOException $e )
     {
       self::log_err($e);
       return false;
     }
+    
+    $conn->exec("SET ANSI_WARNINGS ON");                                                                               
+    $conn->exec("SET ANSI_PADDING ON");
+    $conn->exec("SET ANSI_NULLS ON");
+    $conn->exec("SET QUOTED_IDENTIFIER ON");
+    $conn->exec("SET CONCAT_NULL_YIELDS_NULL ON");
+    $conn->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
+    $conn->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_NATURAL);
+    $conn->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
+    $conn->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+    // $conn->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
+    
     return $conn;
   }
 
@@ -541,13 +600,15 @@ class SqlShim
   public static function fetch_array( \PDOStatement $stmt, $fetchType=self::FETCH_BOTH, $row=self::SCROLL_NEXT, $offset=0 )
   {
     try {
-      $array = $stmt->fetch(
+      $array = $stmt->fetch
+      (
         self::$tabfetch[$fetchType],
         self::$tabscroll[$row],
         $offset
-      );
+      )
+      ;
       if ( is_array($array) )
-      {
+      { 
         return self::typify($array);
       }
     }
@@ -563,7 +624,7 @@ class SqlShim
   }
 
   public static function fetch_object( \PDOStatement $stmt, $className='stdClass', $ctorParams=[], $row=self::SCROLL_NEXT, $offset=0 )
-  {
+  { 
     try {
       $object = $stmt->fetch(
         \PDO::FETCH_ASSOC,
@@ -640,6 +701,7 @@ class SqlShim
   {
     // TODO: get_field() - figure out what to do with $getAsType...
     // https://msdn.microsoft.com/en-us/library/cc296193.aspx
+    
     return $stmt->fetchColumn($fieldIndex);
   }
 
@@ -664,13 +726,15 @@ class SqlShim
     // REVIEW: num_rows() - $stmt->rowCount DOES NOT work for SELECTs in MSSQL PDO.
     $conn = $stmt->conn;
     $sql = $stmt->queryString;
+    echo "test";
     if ( stripos($sql, "select")>=0 )
     {
-      $sql = preg_replace("/SELECT .* FROM/", "SELECT COUNT(*) AS count FROM", $sql);
+      $sql = preg_replace("/SELECT .* FROM/", "SELECT * AS count FROM", $sql);
 
       var_dump($sql);
       $$cnt = $conn->query($sql);
       $row = $cnt->fetch(\PDO::FETCH_NUM);
+      
       if ( is_array($row) && count($row) )
       {
         return $row[key($row)];
@@ -684,17 +748,35 @@ class SqlShim
     // REVIEW: prepare() - is the ?-to-:tag conversion necessary? since ?s are apparently supported.
     $i = 1;
     $count = -1;
+    
     do {
       $sql = preg_replace('/\?/', ":var$i", $sql, 1, $found);
       $i++;
       $count++;
     } while ( $found );
 
+    //*****Use this for parameters if part above does not work!
+
+    // $occurences = mb_substr_count($sql, "?");
+    // for ($x=0; $x<=$occurences; $x++){
+    // //Should add error handling if parameter is blank
+    //   if (ctype_digit($sqlparams[$x])){
+    //       $sql = preg_replace('/\?/', $params[$x], $sql, 1);
+    //   }
+    //   else{
+    //       //Not sure why it needs single quotes instead of double.
+    //       $sql = preg_replace('/\?/', '\''.$params[$x].'\'', $sql, 1);
+    //   }
+    // }
+  
+    $sql = stripslashes(($sql));
+
     // translate options array
     $optionsin = $options;
     $options = [];
     foreach ( $options as $opt=>$val )
     {
+
       switch ( $opt )
       {
         case 'QueryTimeout':
@@ -730,6 +812,7 @@ class SqlShim
         $i++;
       }
       $stmt->conn = $conn; // for ref
+      
       return $stmt;
     }
     catch ( \PDOException $e )
@@ -745,12 +828,8 @@ class SqlShim
 
     try
     {
-      if ( self::execute($stmt) )
-      {
-        return $stmt;
-      }
-      else {
-        self::log_err($stmt->errorInfo());
+      if (self::execute($stmt)){
+        
         return $stmt;
       }
     }
