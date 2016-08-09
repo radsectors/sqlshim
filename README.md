@@ -64,3 +64,23 @@ Please visit the [project on GitHub](https://github.com/radsectors/sqlshim) to v
 
 [sqlshim]: https://github.com/radsectors/sqlshim
 [sqlsrv]: https://github.com/Azure/msphpsql "Microsoft SQL Server Driver for PHP"
+
+#DBLIB Based Version (dexterfichuk)
+## Intro
+I've been using this for awhile and performed some changes to the original one. The original copy is indeed great the way it is for some, but this one has some significant changes. Below are a few of the fundamental changes, but I've done other various tweaks to get it up and working for myself.
+
+## Changes
+- Changed from the ODBC PDO driver to use DBLIB, couldn't connect with ODBC
+- Rewrote the parameter function, as it wouldn't pass in any parameters for me.
+- Had to rewrite a converter for datatypes. With DBLIB connections everything is returned as a string, so this will fix numbers and bool's into the proper format. 
+- May now be dependent on a few more packages
+- Forces the use of FreeTDS 7.2
+
+## Benefits
+- The original sqlshim can't retrieve the "text" datatype, and any query which calls a text type field will be cut off and return null fields thereafter. The DBLIB driver however does not have this problem.
+- Parameters work whereas they did not for me prior.
+- Stored parameters always work because of forced FreeTDS version.
+
+## Issues
+- Retrieves dates as strings
+- Weird memory leak errors if using on PHP 5.5.19 or lower. I recommend using PHP 5.6.23. The warnings do not affect performance and are just a PHP bug if you remain on a lower PHP version.
