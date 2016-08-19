@@ -53,8 +53,8 @@ class sqlshim
     {
         // process options
         self::$options = [
-            'driver' => 'SqlShim',
-            'tds_version' => '7.4',
+            'driver' => 'dblib', // dblib,odbc
+            'tds_version' => '7.2',
             'autotype_fields' => false,
             'globals' => true,
             // 'odbcini' => "/etc/odbc.ini",
@@ -64,18 +64,19 @@ class sqlshim
         foreach ($options as $opt => $val) {
             $opt = strtolower($opt);
             switch ($opt) {
-              case 'driver':
-              case 'tds_version':
-                self::$options[$opt] = $val;
-                break;
-              case 'odbcini':
-              case 'odbcinstini':
-                if (file_exists($val)) {
-                  putenv(strtoupper($opt)."=$val");
-                }
-                break;
-              default:
-                break;
+                case 'driver':
+                    self::$options[$opt] = $val;
+                case 'tds_version':
+                    self::$options[$opt] = $val;
+                    break;
+                case 'odbcini':
+                case 'odbcinstini':
+                    if (file_exists($val)) {
+                        putenv(strtoupper($opt)."=$val");
+                    }
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -242,13 +243,35 @@ class sqlshim
      */
     private static function typify($row)
     {
-        $i = 0;
-        foreach ($row as $col => &$val) {
-            $val = self::guesstype($val);
-            ++$i;
+        foreach ($row as &$value) {
+            //DBLIB database driver returns everything as strings, so this converts num's back to the correct data type
+            $value = self::convertDataType($value);
         }
 
         return $row;
+    }
+
+    private static function convertDataType($string)
+    {
+        // uncommenting would allow for separation of float and int's
+        //
+        // if (filter_var($string, FILTER_VALIDATE_INT) === false)
+        // {
+        if (filter_var($string, FILTER_VALIDATE_FLOAT) === false) {
+            return $string;
+        } else {
+            //is a float
+          $string = (float) filter_var($string, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+        }
+        // }
+        //
+        // else
+        // {
+        //    // is an int
+        //    $string = (int)filter_var($string, FILTER_SANITIZE_NUMBER_INT);
+        // }
+
+        return $string;
     }
 
     /**
@@ -365,7 +388,7 @@ class sqlshim
     const SQLTYPE_SMALLDATETIME = 8285;
     const SQLTYPE_SMALLINT = 5;
     const SQLTYPE_SMALLMONEY = 33559555;
-    const SQLTYPE_TEXT = -1;
+    const SQLTYPE_TEXT = -1; // -1 means unlimited
     const SQLTYPE_TIME = 58728806;
     const SQLTYPE_TIMESTAMP = 4606;
     const SQLTYPE_TINYINT = -6;
@@ -496,9 +519,10 @@ class sqlshim
         list($serverName, $port) = explode(',', $serverName.',1433', 3);
 
         try {
+            // $conn = new \PDO("dblib:version=7.2;charset=UTF-8;host={$serverName};dbname={$dbname}", "{$username}", "{$pw}");
             $conn = new \PDO(
                 sprintf(
-                    'odbc:driver=%s;tds_version=%s;server=%s;port=%s;database=%s;clientcharset=%s;',
+                    '%s:tds_version=%s;server=%s;port=%s;database=%s;clientcharset=%s;',
                     self::$options['driver'],
                     self::$options['tds_version'],
                     $serverName,
@@ -509,18 +533,22 @@ class sqlshim
                 $connectionInfo['UID'],
                 $connectionInfo['PWD']
             );
-            $conn->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-            $conn->setAttribute(\PDO::ATTR_EMULATE_PREPARES, true);
-            $conn->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_NATURAL);
-            $conn->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
-            $conn->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
-            $conn->prepare('SET ANSI_WARNINGS ON')->execute();
-            $conn->prepare('SET ANSI_NULLS ON')->execute();
         } catch (\PDOException $e) {
             self::log_err($e);
 
             return false;
         }
+
+        $conn->prepare('SET ANSI_WARNINGS ON')->execute();
+        $conn->prepare('SET ANSI_PADDING ON')->execute();
+        $conn->prepare('SET ANSI_NULLS ON')->execute();
+        $conn->prepare('SET QUOTED_IDENTIFIER ON')->execute();
+        $conn->prepare('SET CONCAT_NULL_YIELDS_NULL ON')->execute();
+        $conn->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
+        $conn->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_NATURAL);
+        $conn->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
+        $conn->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        // $conn->setAttribute(\PDO::ATTR_EMULATE_PREPARES, true);
 
         return $conn;
     }
@@ -539,11 +567,7 @@ class sqlshim
     public static function fetch_array(\PDOStatement $stmt, $fetchType = self::FETCH_BOTH, $row = self::SCROLL_NEXT, $offset = 0)
     {
         try {
-            $array = $stmt->fetch(
-                self::$tabfetch[$fetchType],
-                self::$tabscroll[$row],
-                $offset
-            );
+            $array = $stmt->fetch(self::$tabfetch[$fetchType], self::$tabscroll[$row], $offset);
             if (is_array($array)) {
                 return self::typify($array);
             }
@@ -676,6 +700,20 @@ class sqlshim
             ++$i;
             ++$count;
         } while ($found);
+
+        //*****Use this for parameters if part above does not work!
+        // $occurences = mb_substr_count($sql, "?");
+        // for ($x=0; $x<=$occurences; $x++) {
+        // // Should add error handling if parameter is blank
+        //   if (ctype_digit($sqlparams[$x])){
+        //       $sql = preg_replace('/\?/', $params[$x], $sql, 1);
+        //   } else {
+        //       // Not sure why it needs single quotes instead of double.
+        //       $sql = preg_replace('/\?/', '\''.$params[$x].'\'', $sql, 1);
+        //   }
+        // }
+
+        $sql = stripslashes(($sql));
 
         // translate options array
         $optionsin = $options;
