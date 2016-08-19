@@ -5,55 +5,35 @@ namespace RadSectors;
 /**
  * PHP sqlsrv functions for Linux/OS X.
  */
-class sqlshim
+final class sqlshim
 {
     private static $options = [];
 
     private static $tabcursor;
     private static $tabfetch;
     private static $tabscroll;
+    private static $cstrparams;
 
     private static $errors = [];
     private static $_init = false;
 
-    const NAME = __CLASS__;
+    // const SQL_INT_MAX = 2147483648;
 
-    const SQL_INT_MAX = 2147483648;
-
-    const MAGIC_NUM_BINARY = 2139095550;
-    const MAGIC_NUM_CHAR = 2139095041;
-    const MAGIC_NUM_DECIMAL = 3;
-    const MAGIC_NUM_NCHAR = 2139095544;
-    const MAGIC_NUM_NVARCHAR = 2139095543;
-    const MAGIC_NUM_NUMERIC = 2;
-    const MAGIC_NUM_NOSCALE = 2139095040;
-    const MAGIC_NUM_SCALE = 8389120;
-    const MAGIC_NUM_STREAM = 6;
-    const MAGIC_NUM_STRING = 8389636;
-    const MAGIC_NUM_VARBINARY = 2139095549;
-    const MAGIC_NUM_VARCHAR = 2139095052;
-    const MAGIC_NUM_ZERO = 8387584;
-
-    const INVALID_PRECISION = -1;
-    const INVALID_SCALE = -1;
-    const SIZE_MAX_TYPE = -1;
-
-    // constants for maximums in SQL Server
-    const MAX_FIELD_SIZE = 8000;
-    const MAX_PRECISION = 38;
-    const DEFAULT_PRECISION = 18;
-    const DEFAULT_SCALE = 0;
+    private function __construct()
+    {
+        // can't call me.
+    }
 
     /**
-     * Initialize the SqlShimmage.
+     * Initialize the sqlshimmage.
      *
      * @param array $options
      */
     public static function init($options = [])
     {
         // process options
-        self::$options = [
-            'driver' => 'dblib', // dblib,odbc
+        self::$options = (object) [
+            'driver' => 'sqlshim',
             'tds_version' => '7.2',
             'autotype_fields' => false,
             'globals' => true,
@@ -63,12 +43,28 @@ class sqlshim
 
         foreach ($options as $opt => $val) {
             $opt = strtolower($opt);
+            if (is_string($val)) {
+                $val = strtolower($val);
+            }
             switch ($opt) {
-                case 'driver':
-                    self::$options[$opt] = $val;
-                case 'tds_version':
-                    self::$options[$opt] = $val;
+                case 'prefix':
+                    switch ($val) {
+                        case 'odbc':
+                        case 'dblib':
+                            self::$options->$opt = $val;
+                            break;
+                        default:
+                            self::$options->$opt = 'odbc';
+                            break;
+                    }
                     break;
+                case 'driver':
+                case 'tds_version':
+                    self::$options->$opt = $val;
+                    break;
+                case 'autotype_fields':
+                case 'globals':
+                    self::$options->$opt = (bool) $val;
                 case 'odbcini':
                 case 'odbcinstini':
                     if (file_exists($val)) {
@@ -109,7 +105,7 @@ class sqlshim
 
         // for global function registration
         $registered = false;
-        if (self::$options['globals']) {
+        if (self::$options->globals) {
             $registered = require __DIR__.'/globals.php';
         }
 
@@ -162,10 +158,10 @@ class sqlshim
         return;
     }
 
-    private static function calc_size($c, $max = self::MAX_FIELD_SIZE)
+    private static function calc_size($c, $max = 8000)
     {
         $c = intval($c);
-        $r = self::MAGIC_NUM_ZERO;
+        $r = 8387584;
         if ($c == -1) {
             $r += 512;
         } elseif ($c > 0 && $c <= $max) {
@@ -189,44 +185,42 @@ class sqlshim
 
     private static function calc_prec_scale($prec, $scale)
     {
-        $p = is_numeric($prec) ?
-            intval($prec)
-            : self::INVALID_PRECISION
-            ;
-        $s = is_numeric($scale) ?
-            intval($scale)
-            : self::INVALID_SCALE
-            ;
+        $max_precision = 38;
+        $scale = 8389120;
+        $noscale = 2139095040;
+        $invalid = -1;
+
+        $p = is_numeric($prec) ? intval($prec) : $invalid;
+        $s = is_numeric($scale) ? intval($scale) : $invalid;
         if ($s == -257) {
-            $s = self::INVALID_SCALE;
+            $s = $invalid;
         }
         if ($s < -256) {
             $s = $s % 256;
         }
 
-        if (($s == self::INVALID_PRECISION && ($p < 0 || $p > self::MAX_PRECISION))) {
+        if (($s == $invalid && ($p < 0 || $p > $max_precision))) {
             $c = 0;
             $b = $s;
         } else {
-            $c = $s * self::MAGIC_NUM_SCALE;
+            $c = $s * $scale;
             $b = $p - $s;
 
-            if ($p > self::MAX_PRECISION) {
-                $p = self::INVALID_PRECISION;
+            if ($p > $max_precision) {
+                $p = $invalid;
             }
             if ($p < 0) {
-                $p = self::INVALID_PRECISION;
-                $c = ($s + 1) * self::MAGIC_NUM_SCALE;
+                $p = $invalid;
+                $c = ($s + 1) * $scale;
                 $b = -$s - 2;
             }
             if ($s > $p) {
-                $s = self::INVALID_SCALE;
-                $c = self::MAGIC_NUM_NOSCALE;
+                $s = $invalid;
+                $c = $noscale;
                 $b = $p;
             }
-
-            if ($p == self::INVALID_PRECISION && $s == self::INVALID_SCALE) {
-                $c = self::MAGIC_NUM_SCALE + self::MAGIC_NUM_NOSCALE;
+            if ($p == $invalid && $s == $invalid) {
+                $c = $scale + $noscale;
                 $b = -2;
             }
         }
@@ -283,7 +277,7 @@ class sqlshim
      */
     private static function guesstype($val)
     {
-        if (self::$options['autotype_fields']) {
+        if (self::$options->autotype_fields) {
             $num = is_numeric($val);
             $float = $num && strpos($val, '.') !== false;
 
@@ -305,21 +299,21 @@ class sqlshim
     }
 
     // client info helper functions.
-    public static function client_info_driver_dllname()
+    private static function client_info_driver_dllname()
     {
         $return = basename(end(explode(' ', exec('cat /etc/odbcinst.ini | grep Driver'))));
 
         return $return;
     }
-    public static function client_info_driver_odbcver()
+    private static function client_info_driver_odbcver()
     {
         return end(explode(' ', exec('isql --version')));
     }
-    public static function client_info_driver_ver()
+    private static function client_info_driver_ver()
     {
         return end(explode(' ', exec('tsql -C | grep Version')));
     }
-    public static function client_info_ext_ver()
+    private static function client_info_ext_ver()
     {
         return phpversion('pdo_odbc');
         // return (new \ReflectionExtension('pdo_odbc'))->getVersion();
@@ -419,52 +413,52 @@ class sqlshim
 
     public static function PHPTYPE_STREAM($encoding)
     {
-        return self::calc_size_str($encoding, 65536) + self::MAGIC_NUM_STREAM;
+        return self::calc_size_str($encoding, 65536) + 6;
     }
 
     public static function PHPTYPE_STRING($encoding)
     {
-        return self::calc_size_str($encoding, 49150) + self::MAGIC_NUM_STRING;
+        return self::calc_size_str($encoding, 49150) + 8389636;
     }
 
     public static function SQLTYPE_BINARY($byteCount)
     {
-        return self::calc_size($byteCount) + self::MAGIC_NUM_BINARY;
+        return self::calc_size($byteCount) + 2139095550;
     }
 
     public static function SQLTYPE_CHAR($charCount)
     {
-        return self::calc_size($charCount) + self::MAGIC_NUM_CHAR;
+        return self::calc_size($charCount) + 2139095041;
     }
 
     public static function SQLTYPE_DECIMAL($precision, $scale)
     {
-        return self::calc_prec_scale($precision, $scale) + self::MAGIC_NUM_DECIMAL;
+        return self::calc_prec_scale($precision, $scale) + 3;
     }
 
     public static function SQLTYPE_NCHAR($charCount)
     {
-        return self::calc_size($charCount, 4000) + self::MAGIC_NUM_NCHAR;
+        return self::calc_size($charCount, 4000) + 2139095544;
     }
 
     public static function SQLTYPE_NUMERIC($precision, $scale)
     {
-        return self::calc_prec_scale($precision, $scale) + self::MAGIC_NUM_NUMERIC;
+        return self::calc_prec_scale($precision, $scale) + 2;
     }
 
     public static function SQLTYPE_NVARCHAR($charCount)
     {
-        return self::calc_size($charCount, 4000) + self::MAGIC_NUM_NVARCHAR;
+        return self::calc_size($charCount, 4000) + 2139095543;
     }
 
     public static function SQLTYPE_VARBINARY($byteCount)
     {
-        return self::calc_size($byteCount) + self::MAGIC_NUM_VARBINARY;
+        return self::calc_size($byteCount) + 2139095549;
     }
 
     public static function SQLTYPE_VARCHAR($charCount)
     {
-        return self::calc_size($charCount) + self::MAGIC_NUM_VARCHAR;
+        return self::calc_size($charCount) + 2139095052;
     }
 
     public static function begin_transaction(\PDO $conn)
@@ -514,25 +508,40 @@ class sqlshim
     {
         // IDEA: connect() - research prefixes? do something with them?
         $serverName = str_replace('tcp:', '', $serverName);
-
         // default port
-        list($serverName, $port) = explode(',', $serverName.',1433', 3);
+        list($connectionInfo['serverName'], $connectionInfo['port']) = explode(',', $serverName.',1433', 3);
+        // lowercase all keys
+        $connectionInfo = array_change_key_case($connectionInfo);
+
+        $cstrparams = [
+            'odbc' => [
+                'driver' => 'driver',
+                'tds_version' => 'tds_version',
+                'servername' => 'server',
+                'port' => 'port',
+                'database' => 'database',
+                'characterset' => 'clientcharset',
+            ],
+            'dblib' => [
+                'servername' => 'host',
+                'database' => 'dbname',
+                'port' => 'port',
+                'characterset' => 'charset',
+            ],
+        ];
+        $cstr = self::$options->prefix.':';
+        foreach ($cstrparams[self::$options->prefix] as $i => $par) {
+            $i = strtolower($i);
+            if (isset($connectionInfo[$i])) {
+                $cstr .= "$par=$connectionInfo[$i];";
+            } elseif (isset(self::$options->$i)) {
+                $cstr .= "$par=".self::$options->$i.';';
+            }
+        }
+        echo "$cstr\n\n\n";
 
         try {
-            // $conn = new \PDO("dblib:version=7.2;charset=UTF-8;host={$serverName};dbname={$dbname}", "{$username}", "{$pw}");
-            $conn = new \PDO(
-                sprintf(
-                    '%s:tds_version=%s;server=%s;port=%s;database=%s;clientcharset=%s;',
-                    self::$options['driver'],
-                    self::$options['tds_version'],
-                    $serverName,
-                    $port,
-                    $connectionInfo['Database'],
-                    $connectionInfo['CharacterSet']
-                ),
-                $connectionInfo['UID'],
-                $connectionInfo['PWD']
-            );
+            $conn = new \PDO($cstr, $connectionInfo['uid'], $connectionInfo['pwd']);
         } catch (\PDOException $e) {
             self::log_err($e);
 
