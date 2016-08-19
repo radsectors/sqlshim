@@ -2,86 +2,24 @@
 
 namespace
 {
-use RadSectors\SqlShim;
+use RadSectors\sqlshim;
 
 if (!extension_loaded('sqlsrv')) {
-    define('SQLSRV_FETCH_NUMERIC', SqlShim::FETCH_NUMERIC);
-    define('SQLSRV_FETCH_ASSOC', SqlShim::FETCH_ASSOC);
-    define('SQLSRV_FETCH_BOTH', SqlShim::FETCH_BOTH);
+    $ref = new \ReflectionClass('\RadSectors\sqlshim');
 
-    define('SQLSRV_ERR_ERRORS', SqlShim::ERR_ERRORS);
-    define('SQLSRV_ERR_WARNINGS', SqlShim::ERR_WARNINGS);
-    define('SQLSRV_ERR_ALL', SqlShim::ERR_ALL);
+    foreach ($ref->getConstants() as $const => $value) {
+        define("SQLSRV_$const", $value);
+    }
 
-    define('SQLSRV_LOG_SYSTEM_ALL', SqlShim::LOG_SYSTEM_ALL);
-    define('SQLSRV_LOG_SYSTEM_CONN', SqlShim::LOG_SYSTEM_CONN);
-    define('SQLSRV_LOG_SYSTEM_INIT', SqlShim::LOG_SYSTEM_INIT);
-    define('SQLSRV_LOG_SYSTEM_OFF', SqlShim::LOG_SYSTEM_OFF);
-    define('SQLSRV_LOG_SYSTEM_STMT', SqlShim::LOG_SYSTEM_STMT);
-    define('SQLSRV_LOG_SYSTEM_UTIL', SqlShim::LOG_SYSTEM_UTIL);
-
-    define('SQLSRV_LOG_SEVERITY_ALL', SqlShim::LOG_SEVERITY_ALL);
-    define('SQLSRV_LOG_SEVERITY_ERROR', SqlShim::LOG_SEVERITY_ERROR);
-    define('SQLSRV_LOG_SEVERITY_NOTICE', SqlShim::LOG_SEVERITY_NOTICE);
-    define('SQLSRV_LOG_SEVERITY_WARNING', SqlShim::LOG_SEVERITY_WARNING);
-
-    define('SQLSRV_NULLABLE_YES', SqlShim::NULLABLE_YES);
-    define('SQLSRV_NULLABLE_NO', SqlShim::NULLABLE_NO);
-    define('SQLSRV_NULLABLE_UNKNOWN', SqlShim::NULLABLE_UNKNOWN);
-
-    define('SQLSRV_PARAM_IN', SqlShim::PARAM_IN);
-    define('SQLSRV_PARAM_INOUT', SqlShim::PARAM_INOUT);
-    define('SQLSRV_PARAM_OUT', SqlShim::PARAM_OUT);
-
-    define('SQLSRV_PHPTYPE_INT', SqlShim::PHPTYPE_INT);
-    define('SQLSRV_PHPTYPE_DATETIME', SqlShim::PHPTYPE_DATETIME);
-    define('SQLSRV_PHPTYPE_FLOAT', SqlShim::PHPTYPE_FLOAT);
-    define('SQLSRV_PHPTYPE_NULL', SqlShim::PHPTYPE_NULL);
-
-    define('SQLSRV_ENC_BINARY', SqlShim::ENC_BINARY);
-    define('SQLSRV_ENC_CHAR', SqlShim::ENC_CHAR);
-
-    define('SQLSRV_SQLTYPE_BIGINT', SqlShim::SQLTYPE_BIGINT);
-    define('SQLSRV_SQLTYPE_BIT', SqlShim::SQLTYPE_BIT);
-    define('SQLSRV_SQLTYPE_DATE', SqlShim::SQLTYPE_DATE);
-    define('SQLSRV_SQLTYPE_DATETIME', SqlShim::SQLTYPE_DATETIME);
-    define('SQLSRV_SQLTYPE_DATETIME2', SqlShim::SQLTYPE_DATETIME2);
-    define('SQLSRV_SQLTYPE_DATETIMEOFFSET', SqlShim::SQLTYPE_DATETIMEOFFSET);
-    define('SQLSRV_SQLTYPE_FLOAT', SqlShim::SQLTYPE_FLOAT);
-    define('SQLSRV_SQLTYPE_IMAGE', SqlShim::SQLTYPE_IMAGE);
-    define('SQLSRV_SQLTYPE_INT', SqlShim::SQLTYPE_INT);
-    define('SQLSRV_SQLTYPE_MONEY', SqlShim::SQLTYPE_MONEY);
-    define('SQLSRV_SQLTYPE_NTEXT', SqlShim::SQLTYPE_NTEXT);
-    define('SQLSRV_SQLTYPE_REAL', SqlShim::SQLTYPE_REAL);
-    define('SQLSRV_SQLTYPE_SMALLDATETIME', SqlShim::SQLTYPE_SMALLDATETIME);
-    define('SQLSRV_SQLTYPE_SMALLINT', SqlShim::SQLTYPE_SMALLINT);
-    define('SQLSRV_SQLTYPE_SMALLMONEY', SqlShim::SQLTYPE_SMALLMONEY);
-    define('SQLSRV_SQLTYPE_TEXT', SqlShim::SQLTYPE_TEXT);
-    define('SQLSRV_SQLTYPE_TIME', SqlShim::SQLTYPE_TIME);
-    define('SQLSRV_SQLTYPE_TIMESTAMP', SqlShim::SQLTYPE_TIMESTAMP);
-    define('SQLSRV_SQLTYPE_TINYINT', SqlShim::SQLTYPE_TINYINT);
-    define('SQLSRV_SQLTYPE_UNIQUEIDENTIFIER', SqlShim::SQLTYPE_UNIQUEIDENTIFIER);
-    define('SQLSRV_SQLTYPE_UDT', SqlShim::SQLTYPE_UDT);
-    define('SQLSRV_SQLTYPE_XML', SqlShim::SQLTYPE_XML);
-
-    define('SQLSRV_TXN_READ_UNCOMMITTED', SqlShim::TXN_READ_UNCOMMITTED);
-    define('SQLSRV_TXN_READ_COMMITTED', SqlShim::TXN_READ_COMMITTED);
-    define('SQLSRV_TXN_REPEATABLE_READ', SqlShim::TXN_REPEATABLE_READ);
-    define('SQLSRV_TXN_SNAPSHOT', SqlShim::TXN_SNAPSHOT);
-    define('SQLSRV_TXN_SERIALIZABLE', SqlShim::TXN_SERIALIZABLE);
-
-    define('SQLSRV_CURSOR_FORWARD', SqlShim::CURSOR_FORWARD);
-    define('SQLSRV_CURSOR_STATIC', SqlShim::CURSOR_STATIC);
-    define('SQLSRV_CURSOR_DYNAMIC', SqlShim::CURSOR_DYNAMIC);
-    define('SQLSRV_CURSOR_KEYSET', SqlShim::CURSOR_KEYSET);
-    define('SQLSRV_CURSOR_CLIENT_BUFFERED', SqlShim::CURSOR_CLIENT_BUFFERED);
-
-    define('SQLSRV_SCROLL_NEXT', SqlShim::SCROLL_NEXT);
-    define('SQLSRV_SCROLL_FIRST', SqlShim::SCROLL_FIRST);
-    define('SQLSRV_SCROLL_LAST', SqlShim::SCROLL_LAST);
-    define('SQLSRV_SCROLL_PRIOR', SqlShim::SCROLL_PRIOR);
-    define('SQLSRV_SCROLL_ABSOLUTE', SqlShim::SCROLL_ABSOLUTE);
-    define('SQLSRV_SCROLL_RELATIVE', SqlShim::SCROLL_RELATIVE);
+    // trying to dynamicize these functions,
+    // but you can't really declare a function on the fly like this
+    // foreach ($ref->getMethods(\ReflectionMethod::IS_PUBLIC) as $o) {
+    //     if ($o->name == 'init') {
+    //         continue;
+    //     }
+    //     echo "$o->name\n";
+    // }
+    // exit;
 
     /**
      * SQLSRV_PHPTYPE_STREAM.
@@ -92,7 +30,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function SQLSRV_PHPTYPE_STREAM($encoding)
     {
-        return SqlShim::PHPTYPE_STREAM($encoding);
+        return sqlshim::PHPTYPE_STREAM($encoding);
     }
 
     /**
@@ -104,7 +42,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function SQLSRV_PHPTYPE_STRING($encoding)
     {
-        return SqlShim::PHPTYPE_STRING($encoding);
+        return sqlshim::PHPTYPE_STRING($encoding);
     }
 
     /**
@@ -116,7 +54,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function SQLSRV_SQLTYPE_BINARY($byteCount)
     {
-        return SqlShim::SQLTYPE_BINARY($byteCount);
+        return sqlshim::SQLTYPE_BINARY($byteCount);
     }
 
     /**
@@ -128,7 +66,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function SQLSRV_SQLTYPE_CHAR($charCount)
     {
-        return SqlShim::SQLTYPE_CHAR($charCount);
+        return sqlshim::SQLTYPE_CHAR($charCount);
     }
 
     /**
@@ -143,7 +81,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function SQLSRV_SQLTYPE_DECIMAL($precision, $scale)
     {
-        return SqlShim::SQLTYPE_DECIMAL($precision, $scale);
+        return sqlshim::SQLTYPE_DECIMAL($precision, $scale);
     }
 
     /**
@@ -155,7 +93,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function SQLSRV_SQLTYPE_NCHAR($charCount)
     {
-        return SqlShim::SQLTYPE_NCHAR($charCount);
+        return sqlshim::SQLTYPE_NCHAR($charCount);
     }
 
     /**
@@ -170,7 +108,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function SQLSRV_SQLTYPE_NUMERIC($precision, $scale)
     {
-        return SqlShim::SQLTYPE_NUMERIC($precision, $scale);
+        return sqlshim::SQLTYPE_NUMERIC($precision, $scale);
     }
 
     /**
@@ -182,7 +120,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function SQLSRV_SQLTYPE_NVARCHAR($charCount)
     {
-        return SqlShim::SQLTYPE_NVARCHAR($charCount);
+        return sqlshim::SQLTYPE_NVARCHAR($charCount);
     }
 
     /**
@@ -194,7 +132,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function SQLSRV_SQLTYPE_VARBINARY($byteCount)
     {
-        return SqlShim::SQLTYPE_VARBINARY($byteCount);
+        return sqlshim::SQLTYPE_VARBINARY($byteCount);
     }
 
     /**
@@ -206,7 +144,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function SQLSRV_SQLTYPE_VARCHAR($charCount)
     {
-        return SqlShim::SQLTYPE_VARCHAR($charCount);
+        return sqlshim::SQLTYPE_VARCHAR($charCount);
     }
 
     /**
@@ -218,7 +156,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_begin_transaction($conn)
     {
-        return SqlShim::begin_transaction($conn);
+        return sqlshim::begin_transaction($conn);
     }
 
     /**
@@ -230,7 +168,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_cancel($stmt)
     {
-        return SqlShim::cancel($stmt);
+        return sqlshim::cancel($stmt);
     }
 
     /**
@@ -242,7 +180,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_client_info($conn)
     {
-        return SqlShim::client_info($conn);
+        return sqlshim::client_info($conn);
     }
 
     /**
@@ -254,7 +192,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_close($conn)
     {
-        return SqlShim::close($conn);
+        return sqlshim::close($conn);
     }
 
     /**
@@ -266,7 +204,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_commit($conn)
     {
-        return SqlShim::commit($conn);
+        return sqlshim::commit($conn);
     }
 
     /**
@@ -279,7 +217,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_configure($setting, $value)
     {
-        return SqlShim::configure($setting, $value);
+        return sqlshim::configure($setting, $value);
     }
 
     /**
@@ -292,7 +230,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_connect($serverName, $connectionInfo)
     {
-        return SqlShim::connect($serverName, $connectionInfo);
+        return sqlshim::connect($serverName, $connectionInfo);
     }
 
     /**
@@ -304,7 +242,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_errors($errorsOrWarnings = SQLSRV_ERR_ALL)
     {
-        return SqlShim::errors($errorsOrWarnings);
+        return sqlshim::errors($errorsOrWarnings);
     }
 
     /**
@@ -316,7 +254,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_execute($stmt)
     {
-        return SqlShim::execute($stmt);
+        return sqlshim::execute($stmt);
     }
 
     /**
@@ -331,7 +269,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_fetch_array($stmt, $fetchType = SQLSRV_FETCH_BOTH, $row = SQLSRV_SCROLL_NEXT, $offset = 0)
     {
-        return SqlShim::fetch_array($stmt, $fetchType, $row, $offset);
+        return sqlshim::fetch_array($stmt, $fetchType, $row, $offset);
     }
 
     /**
@@ -347,7 +285,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_fetch_object($stmt, $className = 'stdClass', $ctorParams = [], $row = SQLSRV_SCROLL_NEXT, $offset = 0)
     {
-        return SqlShim::fetch_object($stmt, $className, $ctorParams, $row, $offset);
+        return sqlshim::fetch_object($stmt, $className, $ctorParams, $row, $offset);
     }
 
     /**
@@ -361,7 +299,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_fetch($stmt, $row = SQLSRV_SCROLL_NEXT, $offset = 0)
     {
-        return SqlShim::fetch($stmt, $row, $offset);
+        return sqlshim::fetch($stmt, $row, $offset);
     }
 
     /**
@@ -375,7 +313,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_field_metadata($stmt)
     {
-        return SqlShim::field_metadata($stmt);
+        return sqlshim::field_metadata($stmt);
     }
 
     /**
@@ -387,7 +325,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_free_stmt($stmt)
     {
-        return SqlShim::free_stmt($stmt);
+        return sqlshim::free_stmt($stmt);
     }
 
     /**
@@ -399,7 +337,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_get_config($setting)
     {
-        return SqlShim::get_config($setting);
+        return sqlshim::get_config($setting);
     }
 
     /**
@@ -413,7 +351,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_get_field($stmt, $fieldIndex = 0, $getAsType = null)
     {
-        return SqlShim::get_field($stmt, $fieldIndex = 0, $getAsType);
+        return sqlshim::get_field($stmt, $fieldIndex = 0, $getAsType);
     }
 
     /**
@@ -425,7 +363,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_has_rows($stmt)
     {
-        return SqlShim::has_rows($stmt);
+        return sqlshim::has_rows($stmt);
     }
 
     /**
@@ -437,7 +375,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_next_result($stmt)
     {
-        return SqlShim::next_result($stmt);
+        return sqlshim::next_result($stmt);
     }
 
     /**
@@ -449,7 +387,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_num_fields($stmt)
     {
-        return SqlShim::num_fields($stmt);
+        return sqlshim::num_fields($stmt);
     }
 
     /**
@@ -461,7 +399,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_num_rows($stmt)
     {
-        return SqlShim::num_rows($stmt);
+        return sqlshim::num_rows($stmt);
     }
 
     /**
@@ -476,7 +414,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_prepare($conn, $sql, $params = [], $options = [])
     {
-        return SqlShim::prepare($conn, $sql, $params, $options);
+        return sqlshim::prepare($conn, $sql, $params, $options);
     }
 
     /**
@@ -491,7 +429,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_query($conn, $sql, $params = [], $options = [])
     {
-        return SqlShim::query($conn, $sql, $params, $options);
+        return sqlshim::query($conn, $sql, $params, $options);
     }
 
     /**
@@ -503,7 +441,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_rollback($conn)
     {
-        return SqlShim::rollback($conn);
+        return sqlshim::rollback($conn);
     }
 
     /**
@@ -515,7 +453,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_rows_affected($stmt)
     {
-        return SqlShim::rows_affected($stmt);
+        return sqlshim::rows_affected($stmt);
     }
 
     /**
@@ -527,7 +465,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_send_stream_data($stmt)
     {
-        return SqlShim::send_stream_data($stmt);
+        return sqlshim::send_stream_data($stmt);
     }
 
     /**
@@ -539,7 +477,7 @@ if (!extension_loaded('sqlsrv')) {
      */
     function sqlsrv_server_info($conn)
     {
-        return SqlShim::server_info($conn);
+        return sqlshim::server_info($conn);
     }
 
     return true;
