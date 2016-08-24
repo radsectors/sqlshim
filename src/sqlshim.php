@@ -538,7 +538,6 @@ final class sqlshim
                 $cstr .= "$par=".self::$options->$i.';';
             }
         }
-        echo "$cstr\n\n\n";
 
         try {
             $conn = new \PDO($cstr, $connectionInfo['uid'], $connectionInfo['pwd']);
