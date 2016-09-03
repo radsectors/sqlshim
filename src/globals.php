@@ -13,6 +13,8 @@ if (!extension_loaded('sqlsrv')) {
 
     // trying to dynamicize these functions,
     // but you can't really declare a function on the fly like this
+    // w/o using eval() which may be okay...
+    // the downside is that we lose docblocks...
     // foreach ($ref->getMethods(\ReflectionMethod::IS_PUBLIC) as $o) {
     //     if ($o->name == 'init') {
     //         continue;

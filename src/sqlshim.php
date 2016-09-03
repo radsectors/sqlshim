@@ -1,6 +1,6 @@
 <?php
 
-namespace RadSectors;
+namespace radsectors;
 
 /**
  * PHP sqlsrv functions for Linux/OS X.
@@ -13,7 +13,8 @@ final class sqlshim
     private static $tabfetch;
     private static $tabscroll;
     private static $cstrparams;
-
+    private static $prepare_opts;
+    private static $client_info;
     private static $errors = [];
     private static $_init = false;
 
@@ -33,6 +34,7 @@ final class sqlshim
     {
         // process options
         self::$options = (object) [
+            'prefix' => 'dblib',
             'driver' => 'sqlshim',
             'tds_version' => '7.2',
             'autotype_fields' => false,
@@ -49,12 +51,14 @@ final class sqlshim
             switch ($opt) {
                 case 'prefix':
                     switch ($val) {
-                        case 'odbc':
+                        case 'sybase':
+                        case 'mssql':
+                            $val = 'dblib';
                         case 'dblib':
+                        case 'odbc':
                             self::$options->$opt = $val;
                             break;
                         default:
-                            self::$options->$opt = 'odbc';
                             break;
                     }
                     break;
@@ -102,6 +106,41 @@ final class sqlshim
             self::SCROLL_ABSOLUTE => \PDO::FETCH_ORI_ABS,
             self::SCROLL_RELATIVE => \PDO::FETCH_ORI_REL,
         ];
+        self::$prepare_opts = array_flip([
+            'QueryTimeout',
+            'SendStreamParamsAtExec',
+            'Scrollable',
+        ]);
+
+        self::$client_info = [
+            'odbc' => [
+                'DriverDLLName' => function () {
+                    return basename(end(explode(' ', exec('cat /etc/odbcinst.ini | grep\Driver'))));
+                },
+                'DriverODBCVer' => function () {
+                    return end(explode(' ', exec('isql --version')));
+                },
+                'DriverVer' => function () {
+                    return end(explode(' ', exec('tsql -C | grep Version')));
+                },
+                'ExtensionVer' => function () {
+                    return phpversion('pdo_odbc');
+                },
+            ],
+            'dblib' => [
+                'DriverDLLName' => function () {
+                    return basename(end(explode(' ', exec('echo nothing'))));
+                },
+                'DriverVer' => function () {
+                    echo \PDO::ATTR_CLIENT_VERSION;
+
+                    return end(explode(' ', exec('echo nothing')));
+                },
+                'ExtensionVer' => function () {
+                    return phpversion('pdo_dblib');
+                },
+            ],
+        ];
 
         // for global function registration
         $registered = false;
@@ -119,11 +158,11 @@ final class sqlshim
      */
     private static function log_err($e)
     {
-        if (is_array($e)) {
+        if (is_array($e) && count($e) > 2) {
             self::$errors[] = [
                 'SQLSTATE' => $e[0],
                 'code' => $e[1],
-                'message' => $e[2],
+                'message' => $e[2] ?: '',
             ];
 
             return;
@@ -238,7 +277,7 @@ final class sqlshim
     private static function typify($row)
     {
         foreach ($row as &$value) {
-            //DBLIB database driver returns everything as strings, so this converts num's back to the correct data type
+            // DBLIB database driver returns everything as strings, so this converts num's back to the correct data type
             $value = self::convertDataType($value);
         }
 
@@ -255,12 +294,9 @@ final class sqlshim
             return $string;
         } else {
             //is a float
-          $string = (float) filter_var($string, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+            $string = (float) filter_var($string, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
         }
-        // }
-        //
-        // else
-        // {
+        // } else {
         //    // is an int
         //    $string = (int)filter_var($string, FILTER_SANITIZE_NUMBER_INT);
         // }
@@ -277,6 +313,7 @@ final class sqlshim
      */
     private static function guesstype($val)
     {
+        // TODO: 7-year-old comment http://php.net/manual/en/ref.pdo-dblib.php#89827 may be on to something
         if (self::$options->autotype_fields) {
             $num = is_numeric($val);
             $float = $num && strpos($val, '.') !== false;
@@ -296,27 +333,6 @@ final class sqlshim
         }
 
         return $val;
-    }
-
-    // client info helper functions.
-    private static function client_info_driver_dllname()
-    {
-        $return = basename(end(explode(' ', exec('cat /etc/odbcinst.ini | grep Driver'))));
-
-        return $return;
-    }
-    private static function client_info_driver_odbcver()
-    {
-        return end(explode(' ', exec('isql --version')));
-    }
-    private static function client_info_driver_ver()
-    {
-        return end(explode(' ', exec('tsql -C | grep Version')));
-    }
-    private static function client_info_ext_ver()
-    {
-        return phpversion('pdo_odbc');
-        // return (new \ReflectionExtension('pdo_odbc'))->getVersion();
     }
 
     /*
@@ -469,19 +485,17 @@ final class sqlshim
     public static function cancel(\PDOStatement $stmt)
     {
         // no PDO equivalent for this API
+        return true;
     }
 
     public static function client_info(\PDO $conn)
     {
         // \PDO::ATTR_CLIENT_VERSION (integer)
-        // REVIEW: client_info() - these system() calls may be too system-specific. or need some kind of prioritized alternatives.
-        // the first one won't even work reliably.
-        $return = [
-            'DriverDLLName' => self::client_info_driver_dllname(),
-            'DriverODBCVer' => self::client_info_driver_odbcver(),
-            'DriverVer' => self::client_info_driver_ver(),
-            'ExtensionVer' => self::client_info_ext_ver(),
-        ];
+        $return = [];
+        $info = self::$client_info[self::$options->prefix];
+        foreach ($info as $i => $call) {
+            $return[$i] = $call();
+        }
 
         return $return;
     }
@@ -509,24 +523,31 @@ final class sqlshim
         // IDEA: connect() - research prefixes? do something with them?
         $serverName = str_replace('tcp:', '', $serverName);
         // default port
-        list($connectionInfo['serverName'], $connectionInfo['port']) = explode(',', $serverName.',1433', 3);
+        list($connectionInfo['servername'], $connectionInfo['port']) = explode(',', $serverName.',1433', 2);
         // lowercase all keys
         $connectionInfo = array_change_key_case($connectionInfo);
 
         $cstrparams = [
-            'odbc' => [
-                'driver' => 'driver',
-                'tds_version' => 'tds_version',
-                'servername' => 'server',
-                'port' => 'port',
-                'database' => 'database',
-                'characterset' => 'clientcharset',
-            ],
             'dblib' => [
+                'tds_version' => 'version',
                 'servername' => 'host',
                 'database' => 'dbname',
                 'port' => 'port',
                 'characterset' => 'charset',
+                'encrypt' => 'secure', // not used (http://php.net/manual/en/ref.pdo-dblib.connection.php)
+                'trustservercertificate' => '',
+                'logintimeout' => '',
+            ],
+            'odbc' => [
+                'tds_version' => 'tds_version',
+                'servername' => 'server',
+                'database' => 'database',
+                'port' => 'port',
+                'characterset' => 'clientcharset',
+                'encrypt' => '',
+                'trustservercertificate' => '',
+                'logintimeout' => '',
+                'driver' => 'driver',
             ],
         ];
         $cstr = self::$options->prefix.':';
@@ -634,9 +655,7 @@ final class sqlshim
     public static function field_metadata(\PDOStatement $stmt)
     {
         // NOTE: field_metadata() - PDOStatement->getColumnMeta() is an "EXPERIMENTAL" function. And its request not supported by driver.
-        // HACK: field_metadata() - Implement our own? probably won't work (at first glance)
-        // check: http://community.sitepoint.com/t/pdo-getcolumnmeta-bug/3430/2
-        // credit: http://vancelucas.com/
+        // HACK:  7-year-old comment http://php.net/manual/en/ref.pdo-dblib.php#89827 may be on to something
         return false;
         // $metadata = [];
         // for ( $i=0; $i<$stmt->columnCount(); $i++ )
@@ -665,7 +684,8 @@ final class sqlshim
 
     public static function has_rows(\PDOStatement $stmt)
     {
-        // REVEW: this doesn't work unless $stmt->rowCount() works
+        // REVIEW: has_rows() - this doesn't work unless $stmt->rowCount() works.
+        // might just need: [PDO::ATTR_CURSOR => PDO::CURSOR_SCROLL] option set
         return (bool) $stmt->rowCount();
     }
 
@@ -682,16 +702,12 @@ final class sqlshim
     public static function num_rows(\PDOStatement $stmt)
     {
         // REVIEW: num_rows() - $stmt->rowCount DOES NOT work for SELECTs in MSSQL PDO.
-        $conn = $stmt->conn;
         $sql = $stmt->queryString;
         if (stripos($sql, 'select') >= 0) {
             $sql = preg_replace('/SELECT .* FROM/', 'SELECT COUNT(*) AS count FROM', $sql);
-
-            var_dump($sql);
-            $$cnt = $conn->query($sql);
-            $row = $cnt->fetch(\PDO::FETCH_NUM);
+            $row = $stmt->conn->query($sql)->fetch(\PDO::FETCH_NUM);
             if (is_array($row) && count($row)) {
-                return $row[key($row)];
+                return reset($row);
             }
         }
 
@@ -700,66 +716,40 @@ final class sqlshim
 
     public static function prepare(\PDO $conn, $sql, $params = [], $options = [])
     {
-        // REVIEW: prepare() - is the ?-to-:tag conversion necessary? since ?s are apparently supported.
-        $i = 1;
-        $count = -1;
-        do {
-            $sql = preg_replace('/\?/', ":var$i", $sql, 1, $found);
-            ++$i;
-            ++$count;
-        } while ($found);
-
-        //*****Use this for parameters if part above does not work!
-        // $occurences = mb_substr_count($sql, "?");
-        // for ($x=0; $x<=$occurences; $x++) {
-        // // Should add error handling if parameter is blank
-        //   if (ctype_digit($sqlparams[$x])){
-        //       $sql = preg_replace('/\?/', $params[$x], $sql, 1);
-        //   } else {
-        //       // Not sure why it needs single quotes instead of double.
-        //       $sql = preg_replace('/\?/', '\''.$params[$x].'\'', $sql, 1);
-        //   }
-        // }
-
-        $sql = stripslashes(($sql));
-
-        // translate options array
-        $optionsin = $options;
-        $options = [];
+        // translate options
+        $options = array_intersect_key($options, self::$prepare_opts);
         foreach ($options as $opt => $val) {
             switch ($opt) {
                 case 'QueryTimeout':
                     if (is_numeric($val)) {
                         $conn->setAttribute(\PDO::SQLSRV_ATTR_QUERY_TIMEOUT, intval($val));
                     }
-                break;
+                    break;
                 case 'SendStreamParamsAtExec':
-                    // ???
-                break;
+                    // TODO: prepare() - figure out what this is and what to do with it
+                    break;
                 case 'Scrollable':
                     if (isset(self::$tabcursor[$val])) {
                         $options[\PDO::ATTR_CURSOR] = self::$tabcursor[$val];
                     }
-                break;
+                    break;
                 default:
-                break;
+                    break;
             }
         }
+
+        $sql = stripslashes($sql); // REVIEW: purpose?
 
         if (!is_array($params)) {
             $params = [];
         }
+        $count = mb_substr_count($sql, '?');
+        $params = array_slice(array_pad($params, $count, null), 0, $count, false);
 
         try {
             $stmt = $conn->prepare($sql, $options);
-            $i = 1;
-            foreach (array_slice($params, 0, $count) as $var) {
-                if ($i > $count) {
-                    break;
-                }
-                $bound = $stmt->bindValue(":var$i", $var);
-                // if ( !$bound ) { echo "fail $i:$var<br>"; }
-                ++$i;
+            foreach ($params as $i => $var) {
+                $bound = $stmt->bindValue($i + 1, $var);
             }
             $stmt->conn = $conn; // for ref
             return $stmt;
