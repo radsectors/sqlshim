@@ -134,7 +134,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
      */
     public function testClientInfo($con)
     {
-        //var_dump(sqlsrv_client_info($con));
+        var_dump(sqlsrv_client_info($con));
     }
 
     /**
