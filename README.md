@@ -1,4 +1,4 @@
-# [sqlshim] - PHP sqlsrv for Linux/OS X
+# **sqlshim** &bull; PHP sqlsrv for Linux/OS X
 
 The **sqlshim** project aims to replicate [Microsoft SQL Server Driver for PHP][sqlsrv] (**sqlsrv**) on Linux/OS X.
 
@@ -8,8 +8,8 @@ The **sqlshim** project aims to replicate [Microsoft SQL Server Driver for PHP][
 
 
 ## Basic Usage
-1. ```\RadSectors\SqlShim::init();```
-2. ```sqlsrv_connect( ... );```
+1. `\RadSectors\SqlShim::init();`
+2. `sqlsrv_connect( ... );`
 3. ???
 4. Profit!!
 
@@ -18,7 +18,6 @@ The **sqlshim** project aims to replicate [Microsoft SQL Server Driver for PHP][
 For more detailed documentation on **sqlshim**, please see the [sqlshim wiki](https://github.com/radsectors/sqlshim/wiki)
 
 ## Installation
-
 See [wiki] for more detailed instructions.
 
 #### Composer
@@ -30,7 +29,7 @@ require 'vendor/autoload.php';
 
 #### Manual
 1. Download the latest [release](https://github.com/radsectors/sqlshim/releases).
-2. Extract ```src/sqlshim.php``` and ```src/globals.php``` to wherever you store your 3rd-party libraries.
+2. Extract `src/sqlshim.php` and `src/globals.php` to wherever you store your 3rd-party libraries.
 3. Include `sqlshim.php`.
 ```php
 require '/path/to/sqlshim.php';
@@ -53,6 +52,8 @@ You can hit me up on twitter [@radsectors](https://twitter.com/radsectors).
 
 ## Known Issues
 Please visit the [project on GitHub](https://github.com/radsectors/sqlshim) to view [outstanding issues](https://github.com/radsectors/sqlshim/issues).
+
+## Credits
 
 ## License
 **sqlshim** is licensed under the MIT license. See the [LICENSE](https://github.com/radsectors/sqlshim/blob/master/LICENSE) file for details.

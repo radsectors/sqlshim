@@ -5,13 +5,31 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased][unreleased]
 ### Added
 - Figure out a way to duplicate sqlsrv_field_metadata().
-- Figure out a way to duplicate sqlsrv_cancel() ```$stmt = null```?
+- Figure out a way to duplicate sqlsrv_cancel()
 
 ### Changed
-- Make client_info() more reliable.
-- Figure out how/why sqlsrv's PHPTYPE_STR(EAM|ING) function return values are randomly wrong. When wrong, they are always the same wrong values.
+- Make client_info() less reliant on external utils.
+- Figure out how/why sqlsrv's PHPTYPE_STR(EAM|ING) function return values are randomly different. Though, when they are different, they are always the same different values.
+- figure out how to retrieve client_info for dblib. test odbc functions... those utils may not be installed with unixodbc.
 
-## [0.0.4] -
+## [0.0.7] - 2016-08-25
+### Added
+- dblib/sybase driver option (and made default) due to simpler setup.
+
+### Changed
+- lowercase'd sqlshim classname and radsectors namespace. not sure why I camelcase'd them to begin with.
+- made sqlshim class final.
+- dynamicized the definition of SQLSRV constants.
+- various other small updates and improvements.
+- changed the way client_info retrieval functions are organized and accessed.
+
+### Fixed
+- bug where prepare() options were not being processed at all. oops.
+
+### Removed
+- ?-to-:tag conversion in prepare as it was highly unnecessary
+
+## [0.0.4] - 2015-09-21
 ### Added
 - option parsing for prepare()
 - connection ref variable.
@@ -45,6 +63,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - First alpha release.
 
-[unreleased]: https://github.com/radsectors/sqlshim/compare/v0.0.3...HEAD
+[unreleased]: https://github.com/radsectors/sqlshim/compare/v0.0.4...HEAD
+[0.0.7]: https://github.com/radsectors/sqlshim/compare/v0.0.4...v0.0.7
+[0.0.4]: https://github.com/radsectors/sqlshim/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/radsectors/sqlshim/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/radsectors/sqlshim/compare/v0.0.1...v0.0.2
