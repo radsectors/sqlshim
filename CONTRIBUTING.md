@@ -1,13 +1,16 @@
 # How to contribute
 
-### Code Contributions
-I've never sent or received pull requests, but that seems to be the way to go about it... so I'll suggest that route until I find something I like better.
+### Pull Requests
+1. Fork sqlshim
+2. Create your feature branch: `git checkout -b my-new-feature`
+3. Code some code!
+3. Commit your changes `git commit -am 'Added some feature'`
+4. Push your branch `git push origin my-new-feature`
+5. Submit pull request
 
 
-### Use Cases
-sqlshim's biggest need right now is use cases (especially OS X). If you develop on a Mac and have unixODBC/FreeTDS/PHP set up (or if you don't, but are in need), then I need your help.
-
-Looking for any information to put toward building solid setup instructions for unixODBC/FreeTDS/PHP on OS X.
+### Needs
+User feedback. Has sqlshim worked for you? Has it failed? I want to know.
 
 
 ### Help Wanted
