@@ -1,6 +1,6 @@
 <?php
 
-use RadSectors\SqlShim;
+use radsectors\sqlshim;
 
 class GeneralTest extends PHPUnit_Framework_TestCase
 {
@@ -19,7 +19,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
      */
     public function testInit()
     {
-        \RadSectors\SqlShim::init();
+        \radsectors\sqlshim::init();
 
         if (!extension_loaded('sqlsrv') && function_exists('sqlsrv_connect')) {
             static::$globals = true;
@@ -86,7 +86,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
     private function tryfunction($func, $args)
     {
         $compare = null;
-        $cval = call_user_func_array(\RadSectors\SqlShim::NAME."::$func", $args);
+        $cval = call_user_func_array(\radsectors\sqlshim::NAME."::$func", $args);
         $gval = call_user_func_array("SQLSRV_$func", $args);
         $compare = ($gval === $cval);
         if (!$compare) {

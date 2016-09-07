@@ -8,7 +8,7 @@ The **sqlshim** project aims to replicate [Microsoft SQL Server Driver for PHP][
 
 
 ## Basic Usage
-1. `\RadSectors\SqlShim::init();`
+1. `\radsectors\sqlshim::init();`
 2. `sqlsrv_connect( ... );`
 3. ???
 4. Profit!!
