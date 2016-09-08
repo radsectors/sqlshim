@@ -277,35 +277,15 @@ final class sqlshim
     private static function typify($row)
     {
         foreach ($row as &$value) {
-            // DBLIB database driver returns everything as strings, so this converts num's back to the correct data type
-            $value = self::convertDataType($value);
+            $value = self::guesstype($value);
         }
 
         return $row;
     }
 
-    private static function convertDataType($string)
-    {
-        // uncommenting would allow for separation of float and int's
-        //
-        // if (filter_var($string, FILTER_VALIDATE_INT) === false)
-        // {
-        if (filter_var($string, FILTER_VALIDATE_FLOAT) === false) {
-            return $string;
-        } else {
-            //is a float
-            $string = (float) filter_var($string, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-        }
-        // } else {
-        //    // is an int
-        //    $string = (int)filter_var($string, FILTER_SANITIZE_NUMBER_INT);
-        // }
-
-        return $string;
-    }
-
     /**
      * guesstype.
+     * TODO: guesstype() 7-year-old comment http://php.net/manual/en/ref.pdo-dblib.php#89827 may be on to something
      *
      * @param mixed $val The value for which the type is to be guessed.
      *
@@ -313,22 +293,18 @@ final class sqlshim
      */
     private static function guesstype($val)
     {
-        // TODO: 7-year-old comment http://php.net/manual/en/ref.pdo-dblib.php#89827 may be on to something
         if (self::$options->autotype_fields) {
-            $num = is_numeric($val);
-            $float = $num && strpos($val, '.') !== false;
-
-            if ($float) {
-                return floatval($val);
-            }
-            if ($num) {
-                return intval($val);
+            if (is_numeric($val)) {
+                if (is_float($val)) {
+                    return floatval($val);
+                }
+                if (is_int($val)) {
+                    return intval($val);
+                }
             }
         }
-
-        $len = strlen($val);
-
-        if (($len == 10 || $len == 23) && preg_match('/\d{4}-\d{2}-\d{2}.*/', $val)) {
+        // always try to convert dates because
+        if (preg_match('/\d{4}-\d{2}-\d{2}.*/', $val)) {
             return new \DateTime($val);
         }
 
