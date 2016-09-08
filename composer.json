@@ -28,12 +28,12 @@
   },
   "autoload": {
     "psr-4": {
-      "RadSectors\\": "src"
+      "radsectors\\": "src"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "RadSectors\\Test\\": "tests"
+      "radsectors\\test\\": "tests"
     }
   }
 }
