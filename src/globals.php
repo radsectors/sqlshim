@@ -5,8 +5,9 @@ namespace
 use radsectors\sqlshim;
 
 if (!extension_loaded('sqlsrv')) {
-    $ref = new \ReflectionClass('\radsectors\sqlshim');
+    sqlshim::init();
 
+    $ref = new \ReflectionClass('\radsectors\sqlshim');
     foreach ($ref->getConstants() as $const => $value) {
         define("SQLSRV_$const", $value);
     }
