@@ -2,25 +2,26 @@
 
 The **sqlshim** project aims to replicate [Microsoft SQL Server Driver for PHP][sqlsrv] (**sqlsrv**) on Linux/OS X.
 
-**sqlshim** was conceived out of the need for **[sqlsrv]** (a Windows-only PHP extension) in an OS X development environment. It began as a short script that defined a small set of functions. Unfortunately,
+**sqlshim** was born out of the need for **[sqlsrv]** functions in OS X. It started as a short script with a small set of functions and has since evolved into a nearly full replacement for **[sqlsrv]**.
 
-**DISCLAIMER:** **sqlshim** is in alpha and is geared primarily toward use in a development environment. It is provided as-is and without warranty. I will not be held responsible for any damage(s) incurred from its use.
+**DISCLAIMER:** **sqlshim** is in alpha and is geared primarily toward use in a development environment. It is provided as-is and without warranty. I will not be held responsible for any damage(s) incurred from its use.<br>
+Also, please note that despite its Mac origins, access to a proper Mac test environment has been limited (nonexistent) so I can't presently make any promises to Mac users.
 
 
 ## Basic Usage
-1. `\radsectors\sqlshim::init();`
-2. `sqlsrv_connect( ... );`
-3. ???
-4. Profit!!
+1. `sqlsrv_connect( ... );`
+2. ???
+3. Profit!!
 
 
 ## Documentation
 For more detailed documentation on **sqlshim**, please see the [sqlshim wiki](https://github.com/radsectors/sqlshim/wiki)
 
+
 ## Installation
 See [wiki] for more detailed instructions.
 
-#### Composer
+#### Composer (recommended)
 1. `composer require "radsectors/sqlshim:dev-master"`
 2. Include autoloader.
 ```php
@@ -30,9 +31,10 @@ require 'vendor/autoload.php';
 #### Manual
 1. Download the latest [release](https://github.com/radsectors/sqlshim/releases).
 2. Extract `src/sqlshim.php` and `src/globals.php` to wherever you store your 3rd-party libraries.
-3. Include `sqlshim.php`.
+3. Include `globals.php`.
 ```php
 require '/path/to/sqlshim.php';
+require '/path/to/globals.php';
 ```
 
 #### 3rd-party Lib Setup

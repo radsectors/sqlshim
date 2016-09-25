@@ -7,13 +7,13 @@ namespace radsectors;
  */
 final class sqlshim
 {
-    private static $options = [];
-
+    private static $config;
+    private static $sqlsrvconf;
+    private static $cstrdefaults;
     private static $tabcursor;
     private static $tabfetch;
     private static $tabscroll;
-    private static $cstrparams;
-    private static $prepare_opts;
+    private static $tablogsys;
     private static $client_info;
     private static $errors = [];
     private static $_init = false;
@@ -27,64 +27,45 @@ final class sqlshim
 
     /**
      * Initialize the sqlshimmage.
+     * Called by globals.php
      *
-     * @param array $options
+     * @param array $config
      */
-    public static function init($options = [])
+    public static function init()
     {
-        // process options
-        self::$options = (object) [
-            'prefix' => 'dblib',
-            'driver' => 'sqlshim',
-            'tds_version' => '7.2',
-            'autotype_fields' => false,
-            'globals' => true,
-            // 'odbcini' => "/etc/odbc.ini",
-            // 'odbcinstini' => "/etc/odbcinst.ini",
-        ];
-
-        foreach ($options as $opt => $val) {
-            $opt = strtolower($opt);
-            if (is_string($val)) {
-                $val = strtolower($val);
-            }
-            switch ($opt) {
-                case 'prefix':
-                    switch ($val) {
-                        case 'sybase':
-                        case 'mssql':
-                            $val = 'dblib';
-                        case 'dblib':
-                        case 'odbc':
-                            self::$options->$opt = $val;
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                case 'driver':
-                case 'tds_version':
-                    self::$options->$opt = $val;
-                    break;
-                case 'autotype_fields':
-                case 'globals':
-                    self::$options->$opt = (bool) $val;
-                case 'odbcini':
-                case 'odbcinstini':
-                    if (file_exists($val)) {
-                        putenv(strtoupper($opt)."=$val");
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }
-
         if (self::$_init) {
             return;
         }
 
-        self::$errors = [];
+        self::$config = (object)[
+            'prefix' => 'dblib',
+            'driver' => 'sqlshim',
+            'version' => '7.2',
+            'autotype_fields' => false,
+        ];
+
+        self::$sqlsrvconf = (object)[
+            'clientbuffermaxkbsize' => 10240,
+            'logseverity' => self::LOG_SEVERITY_ERROR,
+            'logsubsystems' => self::LOG_SYSTEM_OFF,
+            'warningsreturnaserrors' => 1,
+        ];
+
+        self::$cstrdefaults = [
+            'applicationintent' => 'ReadWrite',
+            'characterset' => self::ENC_CHAR,
+            'connectionpooling' => 1,
+            'encrypt' => 0,
+            'failover_partner' => null,
+            'logintimeout' => null,
+            'multipleactiveresultsets' => 1,
+            'multisubnetfailover' => 'No',
+            'quoteid' => 1,
+            'returndatesasstrings' => 0,
+            'traceon' => 0,
+            'transactionisolation' => self::TXN_READ_COMMITTED,
+            'trustedservercertificate' => 0,
+        ];
 
         self::$tabcursor = [
             self::CURSOR_FORWARD => \PDO::CURSOR_FWDONLY,
@@ -106,22 +87,28 @@ final class sqlshim
             self::SCROLL_ABSOLUTE => \PDO::FETCH_ORI_ABS,
             self::SCROLL_RELATIVE => \PDO::FETCH_ORI_REL,
         ];
-        self::$prepare_opts = array_flip([
-            'QueryTimeout',
-            'SendStreamParamsAtExec',
-            'Scrollable',
-        ]);
+        self::$tablogsys = [
+            self::LOG_SYSTEM_ALL => \PDO::ERRMODE_EXCEPTION,
+            self::LOG_SYSTEM_OFF => \PDO::ERRMODE_SILENT,
+            self::LOG_SYSTEM_INIT => \PDO::ERRMODE_EXCEPTION,
+            self::LOG_SYSTEM_CONN => \PDO::ERRMODE_EXCEPTION,
+            self::LOG_SYSTEM_STMT => \PDO::ERRMODE_EXCEPTION,
+            self::LOG_SYSTEM_UTIL => \PDO::ERRMODE_EXCEPTION,
+        ];
 
         self::$client_info = [
             'odbc' => [
                 'DriverDLLName' => function () {
-                    return basename(end(explode(' ', exec('cat /etc/odbcinst.ini | grep\Driver'))));
+                    $r = explode(' ', exec('cat /etc/odbcinst.ini | grep\Driver'));
+                    return basename(end($r));
                 },
                 'DriverODBCVer' => function () {
-                    return end(explode(' ', exec('isql --version')));
+                    $r = explode(' ', exec('isql --version'));
+                    return end($r);
                 },
                 'DriverVer' => function () {
-                    return end(explode(' ', exec('tsql -C | grep Version')));
+                    $r = explode(' ', exec('tsql -C | grep Version'));
+                    return end($r);
                 },
                 'ExtensionVer' => function () {
                     return phpversion('pdo_odbc');
@@ -129,24 +116,18 @@ final class sqlshim
             ],
             'dblib' => [
                 'DriverDLLName' => function () {
-                    return basename(end(explode(' ', exec('echo nothing'))));
+                    $r = explode(' ', exec('echo nothing'));
+                    return basename(end($r));
                 },
                 'DriverVer' => function () {
-                    echo \PDO::ATTR_CLIENT_VERSION;
-
-                    return end(explode(' ', exec('echo nothing')));
+                    $r = explode(' ', exec('echo nothing'));
+                    return end($r);
                 },
                 'ExtensionVer' => function () {
                     return phpversion('pdo_dblib');
                 },
             ],
         ];
-
-        // for global function registration
-        $registered = false;
-        if (self::$options->globals) {
-            $registered = require __DIR__.'/globals.php';
-        }
 
         self::$_init = true;
     }
@@ -293,7 +274,7 @@ final class sqlshim
      */
     private static function guesstype($val)
     {
-        if (self::$options->autotype_fields) {
+        if (self::$config->autotype_fields) {
             if (is_numeric($val)) {
                 if (is_float($val)) {
                     return floatval($val);
@@ -343,32 +324,22 @@ final class sqlshim
 
     const PHPTYPE_INT = 2;
     const PHPTYPE_DATETIME = 5;
-    const PHPTYPE_FLOAT = 3; /*
-    const PHPTYPE_STREAM = function();
-    const PHPTYPE_STRING = function(); */
+    const PHPTYPE_FLOAT = 3;
     const PHPTYPE_NULL = 1;
 
     const ENC_BINARY = 'binary';
     const ENC_CHAR = 'char';
 
-    const SQLTYPE_BIGINT = -5; /*
-    const SQLTYPE_BINARY = function()*/
-    const SQLTYPE_BIT = -7; /*
-    const SQLTYPE_CHAR = function(); */
+    const SQLTYPE_BIGINT = -5;
+    const SQLTYPE_BIT = -7;
     const SQLTYPE_DATE = 5211;
     const SQLTYPE_DATETIME = 25177693;
     const SQLTYPE_DATETIME2 = 58734173;
-    const SQLTYPE_DATETIMEOFFSET = 58738021; /*
-    const SQLTYPE_DECIMAL = function(); */
+    const SQLTYPE_DATETIMEOFFSET = 58738021;
     const SQLTYPE_FLOAT = 6;
     const SQLTYPE_IMAGE = -4;
     const SQLTYPE_INT = 4;
-    const SQLTYPE_MONEY = 33564163;/*
-    const SQLTYPE_NCHAR = function();
-    const SQLTYPE_NUMERIC = function();
-    const SQLTYPE_NCHAR = function();
-    const SQLTYPE_NUMERIC = function();
-    const SQLTYPE_NVARCHAR = function(); */
+    const SQLTYPE_MONEY = 33564163;
     const SQLTYPE_NTEXT = -10;
     const SQLTYPE_REAL = 7;
     const SQLTYPE_SMALLDATETIME = 8285;
@@ -379,9 +350,7 @@ final class sqlshim
     const SQLTYPE_TIMESTAMP = 4606;
     const SQLTYPE_TINYINT = -6;
     const SQLTYPE_UNIQUEIDENTIFIER = -11;
-    const SQLTYPE_UDT = -151; /*
-    const SQLTYPE_VARBINARY = function();
-    const SQLTYPE_VARCHAR = function(); */
+    const SQLTYPE_UDT = -151;
     const SQLTYPE_XML = -152;
 
     const TXN_READ_UNCOMMITTED = 1;
@@ -466,9 +435,8 @@ final class sqlshim
 
     public static function client_info(\PDO $conn)
     {
-        // \PDO::ATTR_CLIENT_VERSION (integer)
         $return = [];
-        $info = self::$client_info[self::$options->prefix];
+        $info = self::$client_info[self::$config->prefix];
         foreach ($info as $i => $call) {
             $return[$i] = $call();
         }
@@ -486,12 +454,72 @@ final class sqlshim
         $conn->commit();
     }
 
+    public static function config($config = [])
+    {
+        // process options
+        foreach ($config as $opt => $val) {
+            $opt = strtolower($opt);
+            if (is_string($val)) {
+                $val = strtolower($val);
+            }
+            switch ($opt) {
+                case 'prefix':
+                    switch ($val) {
+                        case 'sybase':
+                        case 'mssql':
+                            $val = 'dblib';
+                        case 'dblib':
+                        case 'odbc':
+                            self::$config->$opt = $val;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case 'driver':
+                case 'version':
+                    self::$config->$opt = $val;
+                    break;
+                case 'autotype_fields':
+                case 'warningsreturnaserrors':
+                    self::$config->$opt = (bool) $val;
+                default:
+                    break;
+            }
+        }
+    }
+
     public static function configure($setting, $value)
     {
-        // TODO: configure() - see these links
-        // http://php.net/manual/en/function.sqlsrv-configure.php#refsect1-function.sqlsrv-configure-parameters
-        // http://php.net/manual/en/pdo.setattribute.php#refsect1-pdo.setattribute-description
-        return true;
+        $setting = strtolower($setting);
+        if (property_exists(self::$sqlsrvconf, $setting)) {
+            switch ($setting) {
+                case 'clientbuffermaxkbsize':
+                case 'logseverity':
+                    return true;
+                    break;
+                case 'logsubsystems':
+                    if (isset(self::$tablogsys[$value])) {
+                        self::$sqlsrvconf->$setting = $value;
+                        return true;
+                    }
+                    break;
+                case 'warningsreturnaserrors':
+                    self::$sqlsrvconf->$setting = !!$value;
+                    return true;
+                    break;
+                default:
+                    break;
+            }
+        }
+        // $logseverity = [
+        //     self::LOG_SEVERITY_ALL,
+        //     self::LOG_SEVERITY_ERROR,
+        //     self::LOG_SEVERITY_WARNING,
+        //     self::LOG_SEVERITY_NOTICE,
+        // ];
+
+        return false;
     }
 
     public static function connect($serverName, $connectionInfo)
@@ -505,34 +533,30 @@ final class sqlshim
 
         $cstrparams = [
             'dblib' => [
-                'tds_version' => 'version',
+                'version' => 'version',
                 'servername' => 'host',
                 'database' => 'dbname',
                 'port' => 'port',
                 'characterset' => 'charset',
                 'encrypt' => 'secure', // not used (http://php.net/manual/en/ref.pdo-dblib.connection.php)
-                'trustservercertificate' => '',
-                'logintimeout' => '',
             ],
             'odbc' => [
-                'tds_version' => 'tds_version',
+                'version' => 'tds_version',
                 'servername' => 'server',
                 'database' => 'database',
                 'port' => 'port',
                 'characterset' => 'clientcharset',
-                'encrypt' => '',
-                'trustservercertificate' => '',
-                'logintimeout' => '',
                 'driver' => 'driver',
             ],
         ];
-        $cstr = self::$options->prefix.':';
-        foreach ($cstrparams[self::$options->prefix] as $i => $par) {
+        $cstr = self::$config->prefix.':';
+        foreach ($cstrparams[self::$config->prefix] as $i => $par) {
+            if (empty($par)) continue;
             $i = strtolower($i);
             if (isset($connectionInfo[$i])) {
                 $cstr .= "$par=$connectionInfo[$i];";
-            } elseif (isset(self::$options->$i)) {
-                $cstr .= "$par=".self::$options->$i.';';
+            } elseif (isset(self::$config->$i)) {
+                $cstr .= "$par=".self::$config->$i.';';
             }
         }
 
@@ -549,10 +573,12 @@ final class sqlshim
         $conn->prepare('SET ANSI_NULLS ON')->execute();
         $conn->prepare('SET QUOTED_IDENTIFIER ON')->execute();
         $conn->prepare('SET CONCAT_NULL_YIELDS_NULL ON')->execute();
+
         $conn->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
         $conn->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_NATURAL);
-        $conn->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
+        $conn->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false); // this doesn't do shit. everything comes out string.
         $conn->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $conn->setAttribute(\PDO::ATTR_ORACLE_NULLS, \PDO::NULL_NATURAL);
         // $conn->setAttribute(\PDO::ATTR_EMULATE_PREPARES, true);
 
         return $conn;
@@ -648,7 +674,14 @@ final class sqlshim
 
     public static function get_config($setting)
     {
-        // TODO: get_config()
+        $setting = strtolower($setting);
+        if (isset(self::$sqlsrvconf->$setting)) {
+            return self::$sqlsrvconf->$setting;
+        }
+        // TODO: test real sqlsrv to find out what the real error looks like.
+        // add error...
+        self::$errors[] = "invalid configuration parameter error";
+        return false;
     }
 
     public static function get_field(\PDOStatement $stmt, $fieldIndex = 0, $getAsType = null)
@@ -693,7 +726,11 @@ final class sqlshim
     public static function prepare(\PDO $conn, $sql, $params = [], $options = [])
     {
         // translate options
-        $options = array_intersect_key($options, self::$prepare_opts);
+        $options = array_intersect_key($options, array_flip([
+            'QueryTimeout',
+            'SendStreamParamsAtExec',
+            'Scrollable',
+        ]));
         foreach ($options as $opt => $val) {
             switch ($opt) {
                 case 'QueryTimeout':
@@ -772,17 +809,18 @@ final class sqlshim
 
     public static function server_info(\PDO $conn)
     {
-        // \PDO::ATTR_SERVER_VERSION (integer)
-        // \PDO::ATTR_SERVER_INFO (integer)
-        $stmt = self::query(
-            $conn,
+        $stmt = self::query($conn,
             "SELECT
                 DB_NAME() AS CurrentDatabase,
-                SERVERPROPERTY('ResourceVersion') AS SQLServerVersion,
-                SERVERPROPERTY('ServerName') AS SQLServerName
+                @@VERSION AS SQLServerVersion,
+                @@SERVERNAME AS SQLServerName
             ;"
         );
-
-        return self::fetch_array($stmt, self::FETCH_ASSOC);
+        if ($stmt !== false) {
+            $info = self::fetch_array($stmt, self::FETCH_ASSOC);
+            $info['SQLServerVersion'] = preg_replace('/.* (\d+\.\d+\.\d+)\.\d+.*/s', '$1', $info['SQLServerVersion']);
+            return $info;
+        }
+        return false;
     }
 }
