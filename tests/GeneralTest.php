@@ -19,7 +19,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
      */
     public function testInit()
     {
-        \radsectors\sqlshim::init();
+        // \radsectors\sqlshim::init();
 
         if (!extension_loaded('sqlsrv') && function_exists('sqlsrv_connect')) {
             static::$globals = true;
@@ -66,35 +66,51 @@ class GeneralTest extends PHPUnit_Framework_TestCase
             'SQLTYPE_VARCHAR' => [-8001, -8000, -1, 0, 1, 8000, 8001],
         ];
         // $functions = get_extension_funcs('sqlsrv');
+        $tryfunc = function($func, $args)
+        {
+            $compare = null;
+            $cval = call_user_func_array(\radsectors\sqlshim::NAME."::$func", $args);
+            $gval = call_user_func_array("SQLSRV_$func", $args);
+            $compare = ($gval === $cval);
+            if (!$compare) {
+                // var_dump([$gval,$cval]);
+                echo "$func(".implode(',', $args)."): srv: $gval /shim: $cval\n";
+            }
+            $this->assertTrue($compare);
+            // return $compare;
+        };
         foreach ($functions as $func => $args) {
             if (strstr($func, 'DECIMAL') || strstr($func, 'NUMERIC')) {
                 for ($p1 = $args[0][0]; $p1 <= $args[0][1]; ++$p1) {
                     for ($p2 = $args[1][0]; $p2 <= $args[1][1]; ++$p2) {
-                        $this->tryfunction($func, [$p1, $p2]);
+                        $tryfunc($func, [$p1, $p2]);
                     }
                 }
             } else {
                 // if ( strstr($func, 'STREAM') || strstr($func, 'STRING') )
 
                 foreach ($args as $arg) {
-                    $this->tryfunction($func, [$arg]);
+                    $tryfunc($func, [$arg]);
                 }
             }
         }
     }
 
-    private function tryfunction($func, $args)
+    /**
+     * @depends testInit
+     */
+    public function testConfigure($init)
     {
-        $compare = null;
-        $cval = call_user_func_array(\radsectors\sqlshim::NAME."::$func", $args);
-        $gval = call_user_func_array("SQLSRV_$func", $args);
-        $compare = ($gval === $cval);
-        if (!$compare) {
-            // var_dump([$gval,$cval]);
-            echo "$func(".implode(',', $args)."): srv: $gval /shim: $cval\n";
-        }
-        $this->assertTrue($compare);
-        // return $compare;
+        // TODO: change to NOT test for default values
+        $this->assertTrue(sqlsrv_configure('ClientBufferMaxKBSize', 10240));
+        $this->assertTrue(sqlsrv_configure('LogSeverity', SQLSRV_LOG_SEVERITY_ERROR));
+        $this->assertTrue(sqlsrv_configure('LogSubsystems', SQLSRV_LOG_SYSTEM_OFF));
+        $this->assertTrue(sqlsrv_configure('WarningsReturnAsErrors', true));
+
+        $this->assertTrue(sqlsrv_get_config('ClientBufferMaxKBSize') == 10240);
+        $this->assertTrue(sqlsrv_get_config('LogSeverity') == SQLSRV_LOG_SEVERITY_ERROR);
+        $this->assertTrue(sqlsrv_get_config('LogSubsystems') == SQLSRV_LOG_SYSTEM_OFF);
+        $this->assertTrue(sqlsrv_get_config('WarningsReturnAsErrors') == true);
     }
 
     /**
@@ -134,7 +150,8 @@ class GeneralTest extends PHPUnit_Framework_TestCase
      */
     public function testClientInfo($con)
     {
-        var_dump(sqlsrv_client_info($con));
+        // TODO: make better tests
+        $this->assertTrue(is_array(sqlsrv_client_info($con)));
     }
 
     /**
@@ -142,8 +159,8 @@ class GeneralTest extends PHPUnit_Framework_TestCase
      */
     public function testServer($con)
     {
-        // var_dump(SqlShim::server_info($con));
-        // var_dump(sqlsrv_server_info($con));
+        // TODO: make better tests
+        $this->assertTrue(is_array(sqlsrv_server_info($con)));
     }
 
     /**
