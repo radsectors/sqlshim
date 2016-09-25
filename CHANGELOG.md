@@ -12,6 +12,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Figure out how/why sqlsrv's PHPTYPE_STR(EAM|ING) function return values are randomly different. Though, when they are different, they are always the same different values.
 - figure out how to retrieve client_info for dblib. test odbc functions... those utils may not be installed with unixodbc.
 
+## [0.0.8] - 2016-09-08
+### Changed
+- improved guesstype() function.
+
+### Fixed
+- some camelcasing
+
+### Removed
+- convertDataType() function.
+
 ## [0.0.7] - 2016-08-25
 ### Added
 - dblib/sybase driver option (and made default) due to simpler setup.
