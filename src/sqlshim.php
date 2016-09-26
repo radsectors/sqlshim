@@ -30,11 +30,15 @@ final class sqlshim
      * Called by globals.php
      *
      * @param array $config
+     *
+     * @return bool Returns whether sqlshim can have its globals defined.
      */
     public static function init()
     {
+        $loadable = !extension_loaded('sqlsrv') && !function_exists('sqlsrv_connect');
+
         if (self::$_init) {
-            return;
+            return $loadable;
         }
 
         self::$config = (object)[
@@ -130,6 +134,8 @@ final class sqlshim
         ];
 
         self::$_init = true;
+
+        return $loadable;
     }
 
     /**
