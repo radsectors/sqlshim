@@ -102,33 +102,31 @@ final class sqlshim
 
         self::$client_info = [
             'odbc' => [
-                'DriverDLLName' => function () {
-                    $r = explode(' ', exec('cat /etc/odbcinst.ini | grep\Driver'));
-                    return basename(end($r));
+                'DriverDLLName' => function() {
+                    return 'Deprecated';
                 },
-                'DriverODBCVer' => function () {
-                    $r = explode(' ', exec('isql --version'));
-                    return end($r);
+                'DriverODBCVer' => function() {
+                    return 'Deprecated';
                 },
-                'DriverVer' => function () {
-                    $r = explode(' ', exec('tsql -C | grep Version'));
-                    return end($r);
+                'DriverVer' => function() {
+                    return 'Deprecated';
                 },
-                'ExtensionVer' => function () {
+                'ExtensionVer' => function() {
                     return phpversion('pdo_odbc');
                 },
             ],
             'dblib' => [
-                'DriverDLLName' => function () {
-                    $r = explode(' ', exec('echo nothing'));
-                    return basename(end($r));
+                'DriverDLLName' => function() {
+                    return 'pdo_dblib.so';
                 },
-                'DriverVer' => function () {
-                    $r = explode(' ', exec('echo nothing'));
-                    return end($r);
+                'DriverODBCVer' => function() {
+                    return 'N/A';
                 },
-                'ExtensionVer' => function () {
-                    return phpversion('pdo_dblib');
+                'DriverVer' => function() {
+                    return (new \ReflectionExtension('pdo_dblib'))->getVersion();
+                },
+                'ExtensionVer' => function() {
+                    return 'radsectors\sqlshim '.self::getVersion().'';
                 },
             ],
         ];
@@ -139,52 +137,55 @@ final class sqlshim
     }
 
     /**
+     * @internal Gets sqlshim version number.
+     *
+     * @return string sqlshim version number.
+     */
+    private static function getVersion()
+    {
+        return 'alpha'; // TODO: get this from git tag if possible.
+    }
+
+    /**
      * @internal Collects error info to internal error log
      *
      * @param mixed $e Error Info
      */
-    private static function log_err($e)
+    private static function logErr($e)
     {
         if (is_array($e) && count($e) > 2) {
             self::$errors[] = [
+                0 => $e[0],
                 'SQLSTATE' => $e[0],
+                1 => $e[1],
                 'code' => $e[1],
+                2 => $e[2] ?: '',
                 'message' => $e[2] ?: '',
             ];
 
-            return;
+            return true;
         }
 
-        if (is_object($e) && get_class($e) == 'PDOException') {
-            if (!empty($e->errorInfo) && is_array($e->errorInfo)) {
-                self::log_err($e->errorInfo);
+        is_a($e, 'PDOException') && (
+            (!empty($e->errorInfo) && self::logErr($e->errorInfo)) ||
+            (bool) preg_replace_callback(
+                "/SQLSTATE\[(\d+)\] .*: (\d+) (.*)/",
+                function ($matches) {
+                    if (count($matches)) {
+                        self::logErr(array_slice($matches, 1));
 
-                return;
-            } elseif (
-                method_exists($e, 'getMessage') &&
-                (bool) preg_replace_callback(
-                    "/SQLSTATE\[(\d+)\] .*: (\d+) (.*)/",
-                    function ($matches) {
-                        if (count($matches)) {
-                            self::log_err(array_slice($matches, 1));
+                        return '1';
+                    }
 
-                            return '1';
-                        }
-
-                        return '0';
-                    },
-                    $e->getMessage()
-                )
-            ) {
-                return;
-            }
-        }
-        self::log_err(['???', '?', 'Unknown error']);
-
-        return;
+                    return '0';
+                },
+                $e->getMessage()
+            )
+        ) ||
+        self::logErr(['SQLSHIM', -0, 'Unknown sqlshim error.']);
     }
 
-    private static function calc_size($c, $max = 8000)
+    private static function calcSize($c, $max = 8000)
     {
         $c = intval($c);
         $r = 8387584;
@@ -197,9 +198,10 @@ final class sqlshim
         return $r;
     }
 
-    private static function calc_size_str($en, $r)
+    private static function calcSizeStr($en)
     {
         $en = strval($en);
+        $r = 524288;
         if ($en == 'binary') {
             $r += 1;
         } elseif ($en == 'char') {
@@ -209,7 +211,7 @@ final class sqlshim
         return intval($r * 512);
     }
 
-    private static function calc_prec_scale($prec, $scale)
+    private static function calcPrecScale($prec, $scale)
     {
         $max_precision = 38;
         $scale = 8389120;
@@ -255,30 +257,30 @@ final class sqlshim
     }
 
     /**
-     * typify.
+     * typifyRow.
      *
      * @param object|array $row Database record to be typed.
      *
      * @return $object|array Returns the typed record.
      */
-    private static function typify($row)
+    private static function typifyRow($row)
     {
         foreach ($row as &$value) {
-            $value = self::guesstype($value);
+            $value = self::typifyField($value);
         }
 
         return $row;
     }
 
     /**
-     * guesstype.
-     * TODO: guesstype() 7-year-old comment http://php.net/manual/en/ref.pdo-dblib.php#89827 may be on to something
+     * typifyField.
+     * TODO: typifyField() 7-year-old comment http://php.net/manual/en/ref.pdo-dblib.php#89827 may be on to something
      *
      * @param mixed $val The value for which the type is to be guessed.
      *
      * @return mixed Returns the typed value.
      */
-    private static function guesstype($val)
+    private static function typifyField($val)
     {
         if (self::$config->autotype_fields) {
             if (is_numeric($val)) {
@@ -380,52 +382,52 @@ final class sqlshim
 
     public static function PHPTYPE_STREAM($encoding)
     {
-        return self::calc_size_str($encoding, 65536) + 6;
+        return self::calcSizeStr($encoding) + 67108870;
     }
 
     public static function PHPTYPE_STRING($encoding)
     {
-        return self::calc_size_str($encoding, 49150) + 8389636;
+        return self::calcSizeStr($encoding) + 67108868;
     }
 
     public static function SQLTYPE_BINARY($byteCount)
     {
-        return self::calc_size($byteCount) + 2139095550;
+        return self::calcSize($byteCount) + 2139095550;
     }
 
     public static function SQLTYPE_CHAR($charCount)
     {
-        return self::calc_size($charCount) + 2139095041;
+        return self::calcSize($charCount) + 2139095041;
     }
 
     public static function SQLTYPE_DECIMAL($precision, $scale)
     {
-        return self::calc_prec_scale($precision, $scale) + 3;
+        return self::calcPrecScale($precision, $scale) + 3;
     }
 
     public static function SQLTYPE_NCHAR($charCount)
     {
-        return self::calc_size($charCount, 4000) + 2139095544;
+        return self::calcSize($charCount, 4000) + 2139095544;
     }
 
     public static function SQLTYPE_NUMERIC($precision, $scale)
     {
-        return self::calc_prec_scale($precision, $scale) + 2;
+        return self::calcPrecScale($precision, $scale) + 2;
     }
 
     public static function SQLTYPE_NVARCHAR($charCount)
     {
-        return self::calc_size($charCount, 4000) + 2139095543;
+        return self::calcSize($charCount, 4000) + 2139095543;
     }
 
     public static function SQLTYPE_VARBINARY($byteCount)
     {
-        return self::calc_size($byteCount) + 2139095549;
+        return self::calcSize($byteCount) + 2139095549;
     }
 
     public static function SQLTYPE_VARCHAR($charCount)
     {
-        return self::calc_size($charCount) + 2139095052;
+        return self::calcSize($charCount) + 2139095052;
     }
 
     public static function begin_transaction(\PDO $conn)
@@ -490,6 +492,7 @@ final class sqlshim
                 case 'warningsreturnaserrors':
                     self::$config->$opt = (bool) $val;
                 default:
+                    self::logErr(["IMSSP", -14, "An invalid parameter was passed to sqlsrv_configure."]);
                     break;
             }
         }
@@ -530,12 +533,17 @@ final class sqlshim
 
     public static function connect($serverName, $connectionInfo)
     {
-        // IDEA: connect() - research prefixes? do something with them?
+        // strip tcp: prefix
         $serverName = str_replace('tcp:', '', $serverName);
-        // default port
-        list($connectionInfo['servername'], $connectionInfo['port']) = explode(',', $serverName.',1433', 2);
         // lowercase all keys
         $connectionInfo = array_change_key_case($connectionInfo);
+        // default port (1433)
+        $port = isset($connectionInfo['port']) ? $connectionInfo['port'] : '1433';
+        // inline port will take precedent over $connectionInfo['port']
+        list(
+            $connectionInfo['servername'],
+            $connectionInfo['port']
+        ) = explode(',', "$serverName,$port", 3);
 
         $cstrparams = [
             'dblib' => [
@@ -569,7 +577,7 @@ final class sqlshim
         try {
             $conn = new \PDO($cstr, $connectionInfo['uid'], $connectionInfo['pwd']);
         } catch (\PDOException $e) {
-            self::log_err($e);
+            self::logErr($e);
 
             return false;
         }
@@ -606,10 +614,10 @@ final class sqlshim
         try {
             $array = $stmt->fetch(self::$tabfetch[$fetchType], self::$tabscroll[$row], $offset);
             if (is_array($array)) {
-                return self::typify($array);
+                return self::typifyRow($array);
             }
         } catch (\PDOException $e) {
-            self::log_err($e);
+            self::logErr($e);
 
             return false;
         }
@@ -633,10 +641,10 @@ final class sqlshim
                 $object = (object) $object;
             }
             if (is_object($object)) {
-                return self::typify($object);
+                return self::typifyRow($object);
             }
         } catch (\PDOException $e) {
-            self::log_err($e);
+            self::logErr($e);
 
             return false;
         }
@@ -649,10 +657,10 @@ final class sqlshim
         try {
             $array = $stmt->fetch(\PDO::FETCH_NUM, self::$tabscroll[$row], $offset);
             if (is_array($array)) {
-                return self::typify($array);
+                return self::typifyRow($array);
             }
         } catch (\PDOException $e) {
-            self::log_err($e);
+            self::logErr($e);
 
             return false;
         }
@@ -684,17 +692,39 @@ final class sqlshim
         if (isset(self::$sqlsrvconf->$setting)) {
             return self::$sqlsrvconf->$setting;
         }
-        // TODO: test real sqlsrv to find out what the real error looks like.
-        // add error...
-        self::$errors[] = "invalid configuration parameter error";
+        self::logErr(["IMSSP", -14, "An invalid parameter was passed to sqlsrv_get_config."]);
+
         return false;
     }
 
     public static function get_field(\PDOStatement $stmt, $fieldIndex = 0, $getAsType = null)
     {
-        // TODO: get_field() - figure out what to do with $getAsType...
-        // https://msdn.microsoft.com/en-us/library/cc296193.aspx
-        return $stmt->fetchColumn($fieldIndex);
+        $value = $stmt->fetchColumn($fieldIndex);
+        // NOTE: AFAIK, there's no way to get any field to come out as anything but a string. So for now, we'll assume string.
+        // TODO:get_field() - test to see what happens when asking for a non-convertable value
+        switch ($getAsType) {
+            case self::PHPTYPE_INT:
+                return (int)$value;
+            case self::PHPTYPE_FLOAT:
+                return (float)$value;
+            case self::PHPTYPE_DATETIME:
+                // TODO:get_field() - test this especially.
+                return date_create($value) || new DateTime();
+            case self::PHPTYPE_STRING(self::ENC_BINARY):
+                return base64_encode($value);
+            case self::PHPTYPE_STRING(self::ENC_CHAR):
+                return "$value";
+            case self::PHPTYPE_STREAM(self::ENC_BINARY):
+                $value = base64_encode($value);
+                return fopen("data://base64,$value", 'r+');
+            case self::PHPTYPE_STREAM(self::ENC_CHAR):
+                return fopen("data://text/plain,$value", 'r+');
+            case self::PHPTYPE_NULL:
+                return null;
+            default:
+        }
+
+        return $value;
     }
 
     public static function has_rows(\PDOStatement $stmt)
@@ -773,7 +803,7 @@ final class sqlshim
             $stmt->conn = $conn; // for ref
             return $stmt;
         } catch (\PDOException $e) {
-            self::log_err($e->errorInfo);
+            self::logErr($e->errorInfo);
 
             return false;
         }
@@ -787,12 +817,12 @@ final class sqlshim
             if (self::execute($stmt)) {
                 return $stmt;
             } else {
-                self::log_err($stmt->errorInfo());
+                self::logErr($stmt->errorInfo());
 
                 return $stmt;
             }
         } catch (\PDOException $e) {
-            self::log_err($e->errorInfo);
+            self::logErr($e->errorInfo);
         }
 
         return false;

@@ -1,10 +1,13 @@
 <?php
 
 use radsectors\sqlshim;
+use radsectors\urp;
 
 class GeneralTest extends PHPUnit_Framework_TestCase
 {
+    private static $sqlshim = false;
     private static $globals = false;
+    private static $sqlsrv = false;
 
     public function setUp()
     {
@@ -19,14 +22,18 @@ class GeneralTest extends PHPUnit_Framework_TestCase
      */
     public function testInit()
     {
-        // \radsectors\sqlshim::init();
-
-        if (!extension_loaded('sqlsrv') && function_exists('sqlsrv_connect')) {
-            static::$globals = true;
+        echo "\nInitialization tests...\n";
+        if (class_exists('\radsectors\sqlshim')) {
+            static::$sqlshim = true;
         }
         if (extension_loaded('sqlsrv')) {
             static::$sqlsrv = true;
+        } elseif (function_exists('sqlsrv_connect')) {
+            static::$globals = true;
         }
+        echo "sqlshim: ".(static::$sqlshim ? '' : 'not ')."loaded.\n".
+            "sqlsrv : ".(static::$sqlsrv  ? '' : 'not ')."loaded.\n".
+            "globals: ".(static::$globals ? '' : 'not ')."loaded.\n\n";
 
         $exists = function_exists('sqlsrv_connect');
         $this->assertTrue($exists);
@@ -40,11 +47,12 @@ class GeneralTest extends PHPUnit_Framework_TestCase
      */
     public function testConstants($init)
     {
+        echo "\nsqlshim and slqsrv present.\nRunning const comparison test...\n";
         // test PHPTYPE constants
         $constants = get_defined_constants(true)['sqlsrv'];
         foreach ($constants as $const => $v) {
             if (strpos($const, 'SQLSRV_') === 0) {
-                $cval = constant(SqlShim::NAME.'::'.str_replace('SQLSRV_', '', $const));
+                $cval = constant('\radsectors\sqlshim::'.str_replace('SQLSRV_', '', $const));
                 $val = constant($const);
                 $compare = ($val === $cval);
                 echo !$compare ? "$const: c$cval vs g$val\n" : '';
@@ -54,13 +62,13 @@ class GeneralTest extends PHPUnit_Framework_TestCase
 
         // test PHPTYPE functions
         $functions = [
-            'PHPTYPE_STREAM' => ['bird', '', 0, 1, 2, true, false, 'char', 'binary'],
-            'PHPTYPE_STRING' => ['bird', '', 0, 1, 2, true, false, 'char', 'binary'],
+            // 'PHPTYPE_STREAM' => ['rock', 'hello', '', 0, 1, 2, true, false, 'char', 'binary', null],
+            // 'PHPTYPE_STRING' => ['rock', 'hello', '', 0, 1, 2, true, false, 'char', 'binary', null],
             'SQLTYPE_BINARY' => [-8001, -8000, -1, 0, 1, 8000, 8001],
             'SQLTYPE_CHAR' => [-8001, -8000, -1, 0, 1, 8000, 8001],
-            'SQLTYPE_DECIMAL' => [[-258, 258], [-258, 258]],
+            // 'SQLTYPE_DECIMAL' => [[-3, 256], [-3, 256]],
             'SQLTYPE_NCHAR' => [-8001, -8000, -1, 0, 1, 8000, 8001],
-            'SQLTYPE_NUMERIC' => [[-258, 258], [-258, 258]],
+            // 'SQLTYPE_NUMERIC' => [[-3, 256], [-3, 256]],
             'SQLTYPE_NVARCHAR' => [-8001, -8000, -1, 0, 1, 8000, 8001],
             'SQLTYPE_VARBINARY' => [-8001, -8000, -1, 0, 1, 8000, 8001],
             'SQLTYPE_VARCHAR' => [-8001, -8000, -1, 0, 1, 8000, 8001],
@@ -69,26 +77,26 @@ class GeneralTest extends PHPUnit_Framework_TestCase
         $tryfunc = function($func, $args)
         {
             $compare = null;
-            $cval = call_user_func_array(\radsectors\sqlshim::NAME."::$func", $args);
-            $gval = call_user_func_array("SQLSRV_$func", $args);
+            $cval = call_user_func_array("\\radsectors\\sqlshim::$func", $args);
+            $gval = call_user_func_array("sqlsrv_$func", $args);
             $compare = ($gval === $cval);
             if (!$compare) {
                 // var_dump([$gval,$cval]);
-                echo "$func(".implode(',', $args)."): srv: $gval /shim: $cval\n";
+                echo "$func(".implode(',', $args)."): srv: $gval / shim: $cval\n";
             }
             $this->assertTrue($compare);
             // return $compare;
         };
         foreach ($functions as $func => $args) {
             if (strstr($func, 'DECIMAL') || strstr($func, 'NUMERIC')) {
-                for ($p1 = $args[0][0]; $p1 <= $args[0][1]; ++$p1) {
-                    for ($p2 = $args[1][0]; $p2 <= $args[1][1]; ++$p2) {
+                $p1 = $args[0][0];
+                $p2 = $args[1][0];
+                for ($args[0][0]; $p1 <= $args[0][1]; $p1++) {
+                    for ($args[1][0]; $p2 <= $args[1][1]; $p2++) {
                         $tryfunc($func, [$p1, $p2]);
                     }
                 }
             } else {
-                // if ( strstr($func, 'STREAM') || strstr($func, 'STRING') )
-
                 foreach ($args as $arg) {
                     $tryfunc($func, [$arg]);
                 }
@@ -101,6 +109,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
      */
     public function testConfigure($init)
     {
+        echo "\nConfigure function test.\n";
         // TODO: change to NOT test for default values
         $this->assertTrue(sqlsrv_configure('ClientBufferMaxKBSize', 10240));
         $this->assertTrue(sqlsrv_configure('LogSeverity', SQLSRV_LOG_SEVERITY_ERROR));
@@ -122,6 +131,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
             return false;
         }
 
+        echo "\nConnection test... ";
         $con = sqlsrv_connect(
             HOSTNAME,
             [
@@ -133,12 +143,11 @@ class GeneralTest extends PHPUnit_Framework_TestCase
         );
 
         if (is_object($con) && get_class($con) == 'PDO') {
-            //
+            echo "sqlshim connection.\n";
         } elseif (is_resource($con) && get_resource_type($con) == 'SQL Server Connection') {
-            //
+            echo "sqlsrv connection.\n";
         } else {
-            echo "Errors:\n";
-            var_dump(sqlsrv_errors());
+            urp::failed(sqlsrv_errors());
         }
         $this->assertTrue($con !== false);
 
@@ -150,8 +159,11 @@ class GeneralTest extends PHPUnit_Framework_TestCase
      */
     public function testClientInfo($con)
     {
+        echo "\nClient Info function test.\n";
         // TODO: make better tests
-        $this->assertTrue(is_array(sqlsrv_client_info($con)));
+        $client_info = sqlsrv_client_info($con);
+        urp::info($client_info);
+        $this->assertTrue(is_array($client_info));
     }
 
     /**
@@ -159,6 +171,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
      */
     public function testServer($con)
     {
+        echo "\nServer info test.";
         // TODO: make better tests
         $this->assertTrue(is_array(sqlsrv_server_info($con)));
     }
@@ -168,6 +181,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
      */
     public function testQueries($con)
     {
+        echo "\nQuery tests...";
         if ($con !== false) {
             $stmt = sqlsrv_query($con, 'SELECT * FROM Northwind.Customers;', null, ['Scrollable' => SQLSRV_CURSOR_KEYSET]);
             $rows = [];
@@ -194,6 +208,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
      */
     public function testStoredProcedure($con)
     {
+        echo "\nStored procedure test.";
         if ($con !== false) {
             $stmt = sqlsrv_query($con, '{ CALL SalesByCategory( ?, ? ) }', ['Meat/Poultry', null]);
             $rows = [];
@@ -213,6 +228,7 @@ class GeneralTest extends PHPUnit_Framework_TestCase
      */
     public function testTransactions($con)
     {
+        echo "\nTransaction test.";
         if ($con !== false) {
             $stmt = sqlsrv_begin_transaction($con);
             // sqlsrv_prepare($cono, )
