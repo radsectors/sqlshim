@@ -5,6 +5,8 @@ namespace
 use radsectors\sqlshim;
 
 if (sqlshim::init()) {
+
+    // dynamicaly define all public constants in sqlshim
     $ref = new \ReflectionClass('\radsectors\sqlshim');
     foreach ($ref->getConstants() as $const => $value) {
         define("SQLSRV_$const", $value);
