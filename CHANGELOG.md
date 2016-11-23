@@ -8,9 +8,30 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Figure out a way to duplicate `sqlsrv_cancel()`
 
 ### Changed
-- Make client_info() less reliant on external utils.
-- Figure out how/why sqlsrv's PHPTYPE_STR(EAM|ING) function return values are randomly different. Though, when they are different, they are always the same different values.
-- test odbc functions... those utils may not be installed with unixodbc.
+- Figure out how/why sqlsrv's PHPTYPE_STR(EAM|ING) function return values are randomly different.
+- PHPTYPE_DECIMAL and SQLTYPE_NUMERIC need fixing.
+- Improve test modules.
+
+### Deprecated
+- odbc support
+
+### Removed
+- odbc support
+
+
+## [0.0.10] - 2016-11-23
+### Added
+- `get_field()`
+- Legit error now logged for invalid `configure()` and `get_config()` parameters.
+
+### Changed
+- Improved error logging. Maybe. I hope?
+- Renamed some internal functions.
+- Some PHPTYPE_* functions needed to be updated.
+- Began deprecating odbc bits.
+
+### Fixed
+- ServerName:Port parsing.
 
 ## [0.0.9] - 2016-09-25
 ### Added
