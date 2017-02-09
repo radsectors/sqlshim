@@ -194,11 +194,19 @@ class GeneralTest extends PHPUnit_Framework_TestCase
 
             // var_dump(sqlsrv_field_metadata($stmt));
 
-            $stmt = sqlsrv_query($con, 'SELECT * FROM Northwind.Customers WHERE Country IN (?, ?, ?);', ['UK', 'Sweden', 'Mexico']);
+            $params = [
+                ['UK', SQLSRV_PARAM_IN, SQLSRV_PHPTYPE_STRING(SQLSRV_ENC_CHAR)],
+                ['Sweden', SQLSRV_PARAM_IN, SQLSRV_PHPTYPE_STRING(SQLSRV_ENC_CHAR)],
+                ['Mexico', SQLSRV_PARAM_IN, SQLSRV_PHPTYPE_STRING(SQLSRV_ENC_CHAR)],
+            ];
+            pq($params);
+
+            $stmt = sqlsrv_query($con, 'SELECT * FROM Northwind.Customers WHERE Country IN (?, ?, ?);', $params);
             $rows = [];
             while ($row = sqlsrv_fetch_object($stmt)) {
                 $rows[] = $row;
             }
+            pq($rows);
             $this->assertCount(14, $rows);
         }
     }

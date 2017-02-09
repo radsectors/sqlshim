@@ -797,8 +797,17 @@ final class sqlshim
 
         try {
             $stmt = $conn->prepare($sql, $options);
-            foreach ($params as $i => $var) {
-                $bound = $stmt->bindValue($i + 1, $var);
+            foreach ($params as $i => $val) {
+                if (is_array($val)) {
+                    $arr = $val;
+                    // TODO: try to support more fully
+                    // QUESTION: need type table?
+                    $val = reset($arr);
+                    $dir = next($arr);
+                    $ptype = next($arr);
+                    $stype = next($arr);
+                }
+                $bound = $stmt->bindValue($i + 1, $val);
             }
             $stmt->conn = $conn; // for ref
             return $stmt;
