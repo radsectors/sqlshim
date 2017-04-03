@@ -1,5 +1,5 @@
 {
-  "name": "radsectors/sqlshim",
+  "name": "chrisdingli/sqlshim",
   "description": "PHP sqlsrv functions for Linux/OS X",
   "keywords": ["sqlsrv", "linux", "osx", "microsoft", "azure"],
   "homepage": "https://github.com/radsectors/sqlshim",
