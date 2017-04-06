@@ -292,9 +292,13 @@ final class sqlshim
                 }
             }
         }
-        // always try to convert dates because
-        if (preg_match('/^\d{4}-\d{2}-\d{2}.*/', $val)) {
-            return new \DateTime($val);
+        // always try to convert dates because reasons.
+        if (preg_match('/^(19|20)\d\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01]).*/', $val)) {
+            try {
+                return new \DateTime($val);
+            } catch (\Exception $e) {
+                /* continue... */
+            }
         }
 
         return $val;
