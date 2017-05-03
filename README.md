@@ -1,4 +1,4 @@
-# **sqlshim** &bull; PHP _sqlsrv_ for Linux/OS X
+# **sqlshim** &bull; sqlsrv for Linux/OS X
 
 **sqlshim** replicates [sqlsrv (Microsoft SQL Server Driver for PHP)](https://github.com/Microsoft/msphpsql) functionality on Linux/OS X.
 
