@@ -53,10 +53,13 @@ class GeneralTest extends PHPUnit_Framework_TestCase
         foreach ($constants as $const => $v) {
             if (strpos($const, 'SQLSRV_') === 0) {
                 $cval = constant('\radsectors\sqlshim::'.str_replace('SQLSRV_', '', $const));
-                $val = constant($const);
-                $compare = ($val === $cval);
-                echo !$compare ? "$const: c$cval vs g$val\n" : '';
-                $this->assertTrue($compare);
+                $gval = constant($const);
+                $compare = ($gval === $cval);
+                if (!$compare) {
+                    echo "$const: srv: $gval / shim: $cval\n";
+                } else {
+                    $this->assertTrue($compare);
+                }
             }
         }
 
@@ -66,9 +69,9 @@ class GeneralTest extends PHPUnit_Framework_TestCase
             // 'PHPTYPE_STRING' => ['rock', 'hello', '', 0, 1, 2, true, false, 'char', 'binary', null],
             'SQLTYPE_BINARY' => [-8001, -8000, -1, 0, 1, 8000, 8001],
             'SQLTYPE_CHAR' => [-8001, -8000, -1, 0, 1, 8000, 8001],
-            // 'SQLTYPE_DECIMAL' => [[-3, 256], [-3, 256]],
+            'SQLTYPE_DECIMAL' => [[-3, 256], [-3, 256]],
             'SQLTYPE_NCHAR' => [-8001, -8000, -1, 0, 1, 8000, 8001],
-            // 'SQLTYPE_NUMERIC' => [[-3, 256], [-3, 256]],
+            'SQLTYPE_NUMERIC' => [[-3, 256], [-3, 256]],
             'SQLTYPE_NVARCHAR' => [-8001, -8000, -1, 0, 1, 8000, 8001],
             'SQLTYPE_VARBINARY' => [-8001, -8000, -1, 0, 1, 8000, 8001],
             'SQLTYPE_VARCHAR' => [-8001, -8000, -1, 0, 1, 8000, 8001],
@@ -81,11 +84,11 @@ class GeneralTest extends PHPUnit_Framework_TestCase
             $gval = call_user_func_array("sqlsrv_$func", $args);
             $compare = ($gval === $cval);
             if (!$compare) {
-                // var_dump([$gval,$cval]);
                 echo "$func(".implode(',', $args)."): srv: $gval / shim: $cval\n";
+            } else {
+                $this->assertTrue($compare);
             }
-            $this->assertTrue($compare);
-            // return $compare;
+            return $compare;
         };
         foreach ($functions as $func => $args) {
             if (strstr($func, 'DECIMAL') || strstr($func, 'NUMERIC')) {
