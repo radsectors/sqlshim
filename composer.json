@@ -1,7 +1,7 @@
 {
   "name": "radsectors/sqlshim",
-  "description": "PHP sqlsrv functions for Linux/OS X",
-  "keywords": ["sqlsrv", "linux", "osx", "microsoft", "azure"],
+  "description": "sqlsrv for Linux/OS X",
+  "keywords": ["sqlsrv", "php", "linux", "osx", "microsoft", "azure"],
   "homepage": "https://github.com/radsectors/sqlshim",
   "license": "MIT",
   "authors": [

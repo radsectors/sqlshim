@@ -19,8 +19,7 @@ See the [wiki](https://github.com/radsectors/sqlshim/wiki) for more detailed doc
 ## Contributing
 See [CONTRIBUTING.md](https://github.com/radsectors/sqlshim/blob/master/CONTRIBUTING.md) for contribution info.
 
-❤ sqlshim?<br>
-Consider [💸](http://paypal.me/radsectors)
+❤ sqlshim? [Send 💸](http://paypal.me/radsectors)!
 
 
 ## License
