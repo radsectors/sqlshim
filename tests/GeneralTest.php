@@ -3,7 +3,7 @@
 use radsectors\sqlshim;
 use radsectors\urp;
 
-class GeneralTest extends PHPUnit_Framework_TestCase
+class GeneralTest extends \PHPUnit\Framework\TestCase
 {
     private static $sqlshim = false;
     private static $globals = false;

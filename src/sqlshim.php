@@ -102,30 +102,30 @@ final class sqlshim
 
         self::$client_info = [
             'odbc' => [
-                'DriverDLLName' => function() {
+                'DriverDLLName' => function () {
                     return 'Deprecated';
                 },
-                'DriverODBCVer' => function() {
+                'DriverODBCVer' => function () {
                     return 'Deprecated';
                 },
-                'DriverVer' => function() {
+                'DriverVer' => function () {
                     return 'Deprecated';
                 },
-                'ExtensionVer' => function() {
+                'ExtensionVer' => function () {
                     return phpversion('pdo_odbc');
                 },
             ],
             'dblib' => [
-                'DriverDLLName' => function() {
+                'DriverDLLName' => function () {
                     return 'pdo_dblib.so';
                 },
-                'DriverODBCVer' => function() {
+                'DriverODBCVer' => function () {
                     return 'N/A';
                 },
-                'DriverVer' => function() {
+                'DriverVer' => function () {
                     return (new \ReflectionExtension('pdo_dblib'))->getVersion();
                 },
-                'ExtensionVer' => function() {
+                'ExtensionVer' => function () {
                     return 'radsectors\sqlshim '.self::getVersion().'';
                 },
             ],
@@ -480,6 +480,7 @@ final class sqlshim
                         case 'sybase':
                         case 'mssql':
                             $val = 'dblib';
+                            // no break
                         case 'dblib':
                         case 'odbc':
                             self::$config->$opt = $val;
@@ -495,6 +496,7 @@ final class sqlshim
                 case 'autotype_fields':
                 case 'warningsreturnaserrors':
                     self::$config->$opt = (bool) $val;
+                    // no break
                 default:
                     self::logErr(["IMSSP", -14, "An invalid parameter was passed to sqlsrv_configure."]);
                     break;
@@ -569,7 +571,9 @@ final class sqlshim
         ];
         $cstr = self::$config->prefix.':';
         foreach ($cstrparams[self::$config->prefix] as $i => $par) {
-            if (empty($par)) continue;
+            if (empty($par)) {
+                continue;
+            }
             $i = strtolower($i);
             if (isset($connectionInfo[$i])) {
                 $cstr .= "$par=$connectionInfo[$i];";
@@ -858,7 +862,8 @@ final class sqlshim
 
     public static function server_info(\PDO $conn)
     {
-        $stmt = self::query($conn,
+        $stmt = self::query(
+            $conn,
             "SELECT
                 DB_NAME() AS CurrentDatabase,
                 @@VERSION AS SQLServerVersion,
