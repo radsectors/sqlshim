@@ -33,6 +33,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - ServerName:Port parsing.
 
+
 ## [0.0.9] - 2016-09-25
 ### Added
 - `configure()` and `get_config()` functions.
@@ -46,6 +47,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Removed
 - ODBC config options. they were never used or tested anyway.
 
+
 ## [0.0.8] - 2016-09-08
 ### Changed
 - improved `guesstype()` function.
@@ -55,6 +57,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Removed
 - `convertDataType()` function.
+
 
 ## [0.0.7] - 2016-08-25
 ### Added
@@ -72,6 +75,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Removed
 - ?-to-:tag conversion in prepare as it was highly unnecessary
+
 
 ## [0.0.4] - 2015-09-21
 ### Added
@@ -92,6 +96,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Improved and optimized SQLTYPE functions. Reduced repeated code.
 
+
 ## [0.0.2] - 2015-06-09
 ### Added
 - Logic to a few more functions.
@@ -103,11 +108,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - A glaring bug where the fetch functions return false instead of null when there are no records to fetch.
 
+
 ## [0.0.1] - 2015-05-28
 ### Added
 - First alpha release.
 
-[unreleased]: https://github.com/radsectors/sqlshim/compare/v0.0.9...HEAD
+[unreleased]: https://github.com/radsectors/sqlshim/compare/v0.0.10...HEAD
+[0.0.10]: https://github.com/radsectors/sqlshim/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/radsectors/sqlshim/compare/v0.0.8...v0.0.9
 [0.0.8]: https://github.com/radsectors/sqlshim/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/radsectors/sqlshim/compare/v0.0.4...v0.0.7
