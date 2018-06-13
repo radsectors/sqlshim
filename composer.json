@@ -8,12 +8,12 @@
     {
       "name": "Marc Hester",
       "email": "marc@radsectors.com",
-      "homepage": "https://github.com/radsectors",
+      "homepage": "https://github.com/maercoftheshire",
       "role": "Developer"
     }
   ],
   "support": {
-    "email": "marc@radsectors.com"
+    "email": "support@radsectors.com"
   },
   "require": {
     "php" : ">=5.4.0"
@@ -22,7 +22,8 @@
   "prefer-stable": true,
   "require-dev": {
     "phpunit/phpunit": "*",
-    "radsectors/urp": "dev-master"
+    "radsectors/urp": "dev-master",
+    "squizlabs/php_codesniffer": "^3.2"
   },
   "suggest": {
 
