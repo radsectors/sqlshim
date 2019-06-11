@@ -8,7 +8,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Figure out a way to duplicate `sqlsrv_cancel()`
 
 ### Changed
-- Figure out how/why sqlsrv's PHPTYPE_STR(EAM|ING) function return values are randomly different.
+- Figure out how/why sqlsrv's PHPTYPE_STR(EAM|ING) function return values are
+randomly different.
 - PHPTYPE_DECIMAL and SQLTYPE_NUMERIC need fixing.
 - Improve test modules.
 
@@ -40,7 +41,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - client info for dblib.
 
 ### Chanaged
-- `init()` is now called automatically by `globals.php` which is now autoloaded via composer. This will affect users who are using custom init config options as well as those who `include()` manually.
+- `init()` is now called automatically by `globals.php` which is now autoloaded
+via composer. This will affect users who are using custom init config options
+as well as those who `include()` manually.
 - improved `server_info()`
 - cleaned up some unnecessary static vars.
 
@@ -64,7 +67,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - dblib/sybase driver option (and made default) due to simpler setup.
 
 ### Changed
-- lowercase'd sqlshim classname and radsectors namespace. not sure why I camelcase'd them to begin with.
+- lowercase'd sqlshim classname and radsectors namespace. not sure why I
+camelcase'd them to begin with.
 - made sqlshim class final.
 - dynamicized the definition of SQLSRV constants.
 - various other small updates and improvements.
@@ -106,7 +110,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Improved (I think) error logging function.
 
 ### Fixed
-- A glaring bug where the fetch functions return false instead of null when there are no records to fetch.
+- A glaring bug where the fetch functions return false instead of null when
+there are no records to fetch.
 
 
 ## [0.0.1] - 2015-05-28

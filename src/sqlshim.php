@@ -1,6 +1,18 @@
 <?php
-
+/**
+ * sqlshim object definition.
+ *
+ * PHP version 5.6
+ *
+ * @category Polyfill
+ * @package  sqlshim
+ * @author   Marc Hester <marc@radsectors.com>
+ * @license  MIT
+ * @link     https://github.com/radsectors/sqlshim
+ */
 namespace radsectors;
+
+// phpcs:disable PSR1.Methods.CamelCapsMethodName, Squiz.Classes.ValidClassName
 
 /**
  * PHP sqlsrv functions for Linux/OS X.
@@ -16,7 +28,7 @@ final class sqlshim
     private static $tablogsys;
     private static $client_info;
     private static $errors = [];
-    private static $_init = false;
+    private static $init = false;
 
     // const SQL_INT_MAX = 2147483648;
 
@@ -37,7 +49,7 @@ final class sqlshim
     {
         $loadable = !extension_loaded('sqlsrv') && !function_exists('sqlsrv_connect');
 
-        if (self::$_init) {
+        if (self::$init) {
             return $loadable;
         }
 
@@ -131,7 +143,7 @@ final class sqlshim
             ],
         ];
 
-        self::$_init = true;
+        self::$init = true;
 
         return $loadable;
     }
@@ -617,8 +629,13 @@ final class sqlshim
         return $stmt->execute();
     }
 
-    public static function fetch_array(\PDOStatement $stmt, $fetchType = self::FETCH_BOTH, $row = self::SCROLL_NEXT, $offset = 0)
-    {
+    // phpcs:ignore
+    public static function fetch_array(
+        \PDOStatement $stmt,
+        $fetchType = self::FETCH_BOTH,
+        $row = self::SCROLL_NEXT,
+        $offset = 0
+    ) {
         try {
             $array = $stmt->fetch(self::$tabfetch[$fetchType], self::$tabscroll[$row], $offset);
             if (is_array($array)) {
@@ -633,8 +650,13 @@ final class sqlshim
         return; // fetch with no errors (null)
     }
 
-    public static function fetch_object(\PDOStatement $stmt, $className = 'stdClass', $ctorParams = [], $row = self::SCROLL_NEXT, $offset = 0)
-    {
+    public static function fetch_object(
+        \PDOStatement $stmt,
+        $className = 'stdClass',
+        $ctorParams = [],
+        $row = self::SCROLL_NEXT,
+        $offset = 0
+    ) {
         try {
             $object = $stmt->fetch(
                 \PDO::FETCH_ASSOC,
@@ -678,7 +700,8 @@ final class sqlshim
 
     public static function field_metadata(\PDOStatement $stmt)
     {
-        // NOTE: field_metadata() - PDOStatement->getColumnMeta() is an "EXPERIMENTAL" function. And its request not supported by driver.
+        // NOTE: field_metadata() - PDOStatement->getColumnMeta() is an "EXPERIMENTAL" function.
+        // And its request not supported by driver.
         // HACK:  7-year-old comment http://php.net/manual/en/ref.pdo-dblib.php#89827 may be on to something
         return false;
         // $metadata = [];
@@ -708,7 +731,8 @@ final class sqlshim
     public static function get_field(\PDOStatement $stmt, $fieldIndex = 0, $getAsType = null)
     {
         $value = $stmt->fetchColumn($fieldIndex);
-        // NOTE: AFAIK, there's no way to get any field to come out as anything but a string. So for now, we'll assume string.
+        // NOTE: AFAIK, there's no way to get any field to come out as anything but a string.
+        // So for now, we'll assume string.
         // TODO:get_field() - test to see what happens when asking for a non-convertable value
         switch ($getAsType) {
             case self::PHPTYPE_INT:

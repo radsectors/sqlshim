@@ -1,7 +1,5 @@
 <?php
-
-use radsectors\sqlshim;
-use radsectors\urp;
+namespace radsectors;
 
 class GeneralTest extends \PHPUnit\Framework\TestCase
 {
@@ -9,11 +7,11 @@ class GeneralTest extends \PHPUnit\Framework\TestCase
     private static $globals = false;
     private static $sqlsrv = false;
 
-    public function setUp()
+    public function setUp(): void
     {
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
     }
 
@@ -77,8 +75,7 @@ class GeneralTest extends \PHPUnit\Framework\TestCase
             'SQLTYPE_VARCHAR' => [-8001, -8000, -1, 0, 1, 8000, 8001],
         ];
         // $functions = get_extension_funcs('sqlsrv');
-        $tryfunc = function($func, $args)
-        {
+        $tryfunc = function ($func, $args) {
             $compare = null;
             $cval = call_user_func_array("\\radsectors\\sqlshim::$func", $args);
             $gval = call_user_func_array("sqlsrv_$func", $args);
@@ -146,7 +143,7 @@ class GeneralTest extends \PHPUnit\Framework\TestCase
         );
 
         if (is_object($con) && get_class($con) == 'PDO') {
-            echo "sqlshim connection.\n";
+            echo "sqlshim PDO connection.\n";
         } elseif (is_resource($con) && get_resource_type($con) == 'SQL Server Connection') {
             echo "sqlsrv connection.\n";
         } else {
@@ -186,7 +183,12 @@ class GeneralTest extends \PHPUnit\Framework\TestCase
     {
         echo "\nQuery tests...";
         if ($con !== false) {
-            $stmt = sqlsrv_query($con, 'SELECT * FROM Northwind.Customers;', null, ['Scrollable' => SQLSRV_CURSOR_KEYSET]);
+            $stmt = sqlsrv_query(
+                $con,
+                'SELECT * FROM Northwind.Customers;',
+                null,
+                ['Scrollable' => SQLSRV_CURSOR_KEYSET]
+            );
             $rows = [];
             // var_dump(sqlsrv_num_rows($stmt));
             // exit;
@@ -202,14 +204,14 @@ class GeneralTest extends \PHPUnit\Framework\TestCase
                 ['Sweden', SQLSRV_PARAM_IN, SQLSRV_PHPTYPE_STRING(SQLSRV_ENC_CHAR)],
                 ['Mexico', SQLSRV_PARAM_IN, SQLSRV_PHPTYPE_STRING(SQLSRV_ENC_CHAR)],
             ];
-            pq($params);
+            // pq($params);
 
             $stmt = sqlsrv_query($con, 'SELECT * FROM Northwind.Customers WHERE Country IN (?, ?, ?);', $params);
             $rows = [];
             while ($row = sqlsrv_fetch_object($stmt)) {
                 $rows[] = $row;
             }
-            pq($rows);
+            // pq($rows);
             $this->assertCount(14, $rows);
         }
     }

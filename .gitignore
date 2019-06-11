@@ -2,3 +2,4 @@ config.php
 vendor
 docs
 composer.lock
+.phpunit.result.cache
